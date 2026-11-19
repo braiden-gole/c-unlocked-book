@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 16: Data Structures from Scratch (Singly vs. Doubly Linked Lists) - C Unlocked by Braiden Golle." />
+        <meta name="author" content="Braiden Golle" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, singly linked lists, and doubly linked lists by Braiden Golle." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 16: Data Structures from Scratch | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 16: Data Structures from Scratch</h2>
+                
+                <div class="lead mb-4">
+                    While arrays offer contiguous memory storage and O(1) random indexing, dynamic data structures link heap-allocated nodes together via explicit memory addresses. Comparing singly linked lists with doubly linked lists reveals the fundamental trade-offs between memory footprint, traversal direction, and operational complexity.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">16.1 Singly Linked Lists: Unidirectional Traversal</h4>
+                <p>A <strong>singly linked list</strong> consists of a chain of nodes where each individual record contains payload data and a single next-node pointer (<code>struct Node* next</code>). Traversal is strictly unidirectional—moving forward from the head node toward the tail requires walking links sequentially.</p>
+                <p>Inserting or deleting elements at the front of a singly linked list requires only $O(1)$ pointer adjustments, avoiding the expensive memory shifting operations inherent in static arrays.</p>
+                
+                <p><strong>Header File (<code>include/darwin/list/linked_list.h</code>):</strong></p>
+
+                <!-- Linked List Header C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">/**
+ * @file        :   linked_list.h
+ * @author      :   Braiden Gole
+ * @brief       :   Header file for a dynamic singly linked list implementation.
+ * @details     :   Defines the structures and function prototypes for a 
+ *                  linear linked list storing integer data. This module 
+ *                  is designed for:
+ *                  - Dynamic memory management.
+ *                  - Tail-based insertion (O(n)).
+ *                  - Sequential data processing via function pointers.
+ * @version     :   1.0
+ * @date        :   2026-05-13
+ */
+#ifndef LINKED_LIST_H
+#define LINKED_LIST_H
+
+#include &lt;stddef.h&gt;
+#include &lt;stdbool.h&gt;
+
+/**
+ * @struct      :   Node
+ * @brief       :   Represents an individual element in the linked list.
+ * @var data    :   The integer value stored within the node.
+ * @var next    :   Pointer to the subsequent node in the sequence (NULL if tail).
+ */
+typedef struct Node
+{
+    int data;
+    struct Node* next;
+} Node;
+
+/**
+ * @struct      :   List
+ * @brief       :   The management structure for the singly linked list.
+ * @var size    :   Current number of nodes present in the list (allows O(1) count).
+ * @var head    :   Pointer to the first node in the sequence (NULL if empty).
+ */
+typedef struct
+{
+    size_t size;
+    Node* head;
+} List;
+
+// Function prototypes.
+List* initialize(void);
+bool append(List* list, int value);
+void map(List* list, void (*function)(int*));
+bool update(List* list, int value, int new_value);
+bool erase(List* list, int value);
+void uninitialize(List* list);
+
+#endif</code></pre>
+
+                <p><strong>Implementation File (<code>src/darwin/list/singly-linked-list/linked_list.c</code>):</strong></p>
+
+                <!-- Linked List Implementation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">/**
+ * @file        :   linked_list.c
+ * @author      :   Braiden Gole
+ * @brief       :   Implementation of a classic singly linked list.
+ * @details     :   This module provides a linear data structure using dynamic 
+ *                  memory allocation. Key features include:
+ *                  - O(n) tail insertion (push) for maintaining order.
+ *                  - Higher-order mapping for functional data transformation.
+ *                  - Value-based node removal and updates.
+ *                  - Manual memory management with deep-clean uninitialization.
+ * @version     :   1.0
+ * @date        :   2026-05-13
+ */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+// Include header files.
+#include "darwin/list/linked_list.h"
+
+/**
+ * @brief       :   Allocates and initializes a new empty list container.
+ * @details     :   Sets the head pointer to NULL and resets the size counter to zero.
+ * @return      :   List*: A pointer to the newly allocated List structure, or NULL if allocation fails.
+ */
+List* initialize(void)
+{
+    // Allocate memory for the List management structure.
+    List* list = (List*)malloc(sizeof(List));
+
+    // Return NULL if the system failed to provide memory.
+    if (list == NULL)
+    {
+        return NULL;
+    }
+
+    // Explicitly set initial state to prevent garbage values.
+    list-&gt;head = NULL;
+    list-&gt;size = 0;
+
+    return list;
+}
+
+/**
+ * @brief       :   Appends a new value to the end (tail) of the list.
+ * @details     :   Traverses the entire list to locate the tail before insertion.
+ * @param       :   list: The list instance to modify.
+ * @param       :   value: The integer data to store in the new node.
+ * @return      :   bool: true if the node was successfully added, false otherwise.
+ */
+bool append(List* list, int value)
+{
+    // Prevent dereferencing a NULL list pointer.
+    if (list == NULL)
+    {
+        return false;
+    }
+
+    // Allocate memory for the new individual node.
+    Node* new_node = (Node*)malloc(sizeof(Node));
+
+    if (new_node == NULL)
+    {
+        return false;
+    }
+
+    // Initialize node data and set the next pointer to NULL (it will be the new tail).
+    new_node-&gt;data = value;
+    new_node-&gt;next = NULL;
+
+    // Handle the case where the list is currently empty.
+    if (list-&gt;head == NULL)
+    {
+        list-&gt;head = new_node;
+    }
+    else
+    {
+        // Initiate the traversal.
+        Node* current = list-&gt;head;
+
+        // Iterate until we find the node that current points to NULL.
+        while (current-&gt;next != NULL)
+        {
+            current = current-&gt;next;
+        }
+
+        // Link the current tail to the new node.
+        current-&gt;next = new_node;
+    }
+
+    list-&gt;size++;
+
+    return true;
+}
+
+/**
+ * @brief       :   Applies a provided function to every element in the list.
+ * @details     :   Iterates from head to tail, passing a pointer to each 
+ *                  node's data to the callback function.
+ * @param       :   list: The list instance.
+ * @param       :   function: A callback function taking an int* (allows modification).
+ * @return      :   void
+ */
+void map(List* list, void (*function)(int*))
+{
+    // Guard against NULL pointers for both the container and the callback.
+    if (list == NULL || function == NULL)
+    {
+        return;
+    }
+
+    Node* current = list-&gt;head;
+
+    // Walk the entire chain until current becomes NULL.
+    while (current != NULL)
+    {
+        // Pass the address of the data so the function can modify it.
+        function(&current-&gt;data);
+        
+        current = current-&gt;next;
+    }
+}
+
+/**
+ * @brief       :   Finds the first instance of a value and replaces it.
+ * @param       :   list: The list instance.
+ * @param       :   value: The target value to search for.
+ * @param       :   new_value: The value to overwrite the target with.
+ * @return      :   bool: true if a replacement occurred, false if not found.
+ */
+bool update(List* list, int value, int new_value)
+{
+    // Check for valid pointers.
+    if (list == NULL)
+    {
+        return false;
+    }
+
+    Node* current = list-&gt;head;
+
+    while (current != NULL)
+    {
+        // Check if current node's data matches the search target.
+        if (current-&gt;data == value)
+        {
+            // Perform the update and exit immediately.
+            current-&gt;data = new_value;
+
+            return true;
+        }
+
+        current = current-&gt;next;
+    }
+
+    // Return false if the loop completes without finding the value.
+    return false;
+}
+
+/**
+ * @brief       :   Removes the first node containing the specified value.
+ * @details     :   Maintains list continuity by linking the previous node 
+ *                  directly to the next node before freeing the target.
+ * @param       :   list: The list instance.
+ * @param       :   value: The value to be removed from the list.
+ * @return      :   bool: true if the node was removed, false otherwise.
+ */
+bool erase(List* list, int value)
+{
+    // Cannot erase from a NULL list or an empty list.
+    if (list == NULL || list-&gt;head == NULL)
+    {
+        return false;
+    }
+
+    Node* current = list-&gt;head;
+    Node* previous = NULL;
+
+    // Search for the node containing the value.
+    while (current != NULL)
+    {
+        if (current-&gt;data == value)
+        {
+            // If previous is NULL, we are removing the head node.
+            if (previous == NULL)
+            {
+                list-&gt;head = current-&gt;next;
+            }
+            else
+            {
+                // Link the previous node to the one following the current node.
+                previous-&gt;next = current-&gt;next;
+            }
+
+            // Deallocate the memory for the target node.
+            free(current);
+
+            list-&gt;size--;
+
+            return true;
+        }
+
+        // Keep a reference to the current node before moving to the next.
+        previous = current;
+        current = current-&gt;next;
+    }
+
+    return false;
+}
+
+/**
+ * @brief       :   Frees all nodes and the top-level list container.
+ * @details     :   Iteratively deallocates each node to prevent memory leaks.
+ * @param       :   list: The list instance to destroy.
+ * @return      :   void
+ */
+void uninitialize(List* list)
+{
+    // Return early if the pointer is already NULL.
+    if (list == NULL)
+    {
+        return;
+    }
+
+    Node* current = list-&gt;head;
+
+    // Free all individual nodes in the heap.
+    while (current != NULL)
+    {
+        // Store the next pointer so we don't lose it after freeing current.
+        Node* next = current-&gt;next;
+
+        free(current);
+
+        current = next;
+    }
+
+    // Free the management structure itself.
+    free(list);
+}</code></pre>
+
+                <p><strong>Program Driver (<code>src/darwin/list/singly-linked-list/main.c</code>):</strong></p>
+
+                <!-- Linked List Driver C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">/**
+ * @file        :   main.c
+ * @author      :   Braiden Gole
+ * @brief       :   Test suite for the Singly Linked List implementation.
+ * @details     :   Demonstrates list initialization, tail-insertion, 
+ *                  functional mapping, data updates, and node deletion.
+ *                  Compile:
+ *                  clang ./src/darwin/list/singly-linked-list/main.c ./src/darwin/list/singly-linked-list/linked_list.c -I./include -o ./bin/linked_list_test
+ * @version     :   1.0
+ * @date        :   2026-04-13
+ */
+#include &lt;stdio.h&gt;
+
+// Include header files.
+#include "darwin/list/linked_list.h"
+
+/**
+ * @brief       :   Squares the value of an integer in place.
+ * @param       :   number: Pointer to the integer to be squared.
+ * @return      :   void
+ */
+static inline void square(int* number)
+{
+    *number *= *number;
+}
+
+/**
+ * @brief       :   Prints an integer followed by a space.
+ * @param       :   number: Pointer to the integer to be logged.
+ * @return      :   void
+ */
+static inline void log_value(int* number)
+{
+    printf("%i ", *number);
+}
+
+int main(void)
+{
+    // Initialize the singly linked list.
+    List* list = initialize();
+
+    // Push a few items.
+    append(list, 3);
+    append(list, 2);
+    append(list, 3);
+
+    // View the original list.
+    printf("%s", "Original: ");
+    map(list, log_value);
+    printf("%s", "NULL\n");
+
+    map(list, square);
+
+    // View the squared data.
+    printf("%s", "Squared: ");
+    map(list, log_value);
+    printf("%s", "NULL\n");
+
+    // We search for 4 (which was 2 squared) and update it.
+    if (update(list, 4, 10))
+    {
+        printf("%s", "Update: ");
+    }
+
+    // Log after update.
+    map(list, log_value);
+    printf("%s", "NULL\n");
+
+    if (erase(list, 9))
+    {
+        printf("%s", "Erased 9: ");
+    }
+
+    // Log after erase.
+    map(list, log_value);
+
+    printf("%s", "NULL\n");
+
+    // Uninitialize the list.
+    uninitialize(list);
+
+    return 0;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">16.2 Doubly Linked Lists: Bidirectional Navigation &amp; Generic Architecture</h4>
+                <p>A <strong>doubly linked list</strong> extends the node structure by adding backward pointers (<code>struct Node* previous</code>) alongside forward pointers (<code>struct Node* next</code>). This bidirectional linkage allows traversing the list in both directions and enables efficient head and tail operations.</p>
+                <p>By utilizing <code>void*</code> pointers and user-defined destructor callbacks, a generic doubly linked list can manage arbitrary data types while automating memory cleanup across complex heap allocations.</p>
+
+                <p><strong>Header File (<code>include/darwin/list/doubly_linked_list.h</code>):</strong></p>
+
+                <!-- Doubly Linked List Header C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">/**
+ * @file        :   doubly_linked_list.h
+ * @author      :   Braiden Gole
+ * @brief       :   Header definition for a generic Doubly Linked List (DLL).
+ * @details     :   This library provides a container for void pointers, allowing
+ *                  it to store any data type. It features automated memory 
+ *                  management via a user-defined destructor callback.
+ * @version     :   1.0
+ * @date        :   2026-05-13
+ */
+#ifndef DOUBLY_LINKED_LIST_H
+#define DOUBLY_LINKED_LIST_H
+
+#include &lt;stdbool.h&gt;
+#include &lt;stddef.h&gt;
+
+/**
+ * @struct Node
+ * @brief  Individual container for data within the list.
+ */
+typedef struct Node
+{
+    void* data;
+    struct Node* previous;
+    struct Node* next;
+} Node;
+
+/**
+ * @struct List
+ * @brief  The management structure for the Doubly Linked List.
+ */
+typedef struct 
+{
+    Node* head;
+    Node* tail;
+    size_t size;
+
+    void (*uninitialize)(void*);
+} List;
+
+// Helper prototypes.
+void print(void* data);
+char* make_text(char* text);
+bool is_match(void* data, void* key);
+void destroy(void* data);
+
+// Function prototypes.
+List* initialize(void (*uninitialize)(void*));
+bool push_front(List* list, void* data);
+bool push_back(List* list, void* data);
+void forEach(const List* list, void (*callback)(void*));
+void* find(const List* list, bool (*predicate)(void*, void*), void* key);
+void* pop_front(List* list);
+void* pop_back(List* list);
+void clear(List* list);
+
+#endif</code></pre>
+
+                <p><strong>Implementation File (<code>src/darwin/list/doubly-linked-list/doubly_linked_list.c</code>):</strong></p>
+
+                <!-- Doubly Linked List Implementation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">/**
+ * @file        :   doubly_linked_list.c
+ * @author      :   Braiden Gole
+ * @brief       :   Implementation of a generic Doubly Linked List.
+ * @details     :   Provides a robust API for managing a list of void pointers with 
+ *                  automatic memory cleanup via user-defined callbacks.
+ * @version     :   1.0
+ * @date        :   2026-05-13
+ */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+// Include header files.
+#include "darwin/list/doubly_linked_list.h"
+
+// Helper functions.
+
+/**
+ * @brief Prints string data stored in a node.
+ * @param data Pointer to the string to be printed.
+ */
+void print(void* data)
+{
+    // Ensure we do not attempt to print a null pointer.
+    if (data != NULL)
+    {
+        printf("[%s]", (char*)data);
+    }
+}
+
+/**
+ * @brief Allocates heap memory and copies a string literal into it.
+ * @param text The source string literal.
+ * @return A pointer to the new heap-allocated string.
+ */
+char* make_text(char* text)
+{
+    if (text == NULL)
+    {
+        return NULL;
+    }
+
+    // Allocate memory length of string + 1 byte for the null terminator.
+    char* data = (char*)malloc(sizeof(char) * strlen(text) + 1);
+
+    if (data == NULL)
+    {
+        return NULL;
+    }
+
+    // Copy the contents of the literal into our new heap memory.
+    strcpy(data, text);
+
+    return data;
+}
+
+/**
+ * @brief Compares two strings for equality.
+ * @param data The data stored in the list.
+ * @param key The search term provided by the user.
+ * @return true if strings match, false otherwise.
+ */
+bool is_match(void* data, void* key)
+{
+    // Safety check to avoid strcmp crashing on NULL.
+    if (data == NULL || key == NULL)
+    {
+        return false;
+    }
+
+    // Returns true if strcmp returns 0 (strings are identical).
+    return strcmp((char*)data, (char*)key) == 0;
+}
+
+/**
+ * @brief Default cleanup callback for heap-allocated data.
+ * @param data Pointer to memory that needs to be freed.
+ */
+void destroy(void* data)
+{
+    // Standard cleanup for single heap allocation.
+    free(data);
+}
+
+/**
+ * @brief Initializes a new empty list.
+ * @param uninitialize Function pointer to clean up user data.
+ * @return Pointer to the allocated List manager, or NULL on failure.
+ */
+List* initialize(void (*uninitialize)(void*))
+{
+    // Allocate the headquarters of the list.
+    List* list = (List*)malloc(sizeof(List));
+
+    if (list == NULL)
+    {
+        return NULL;
+    }
+
+    // Set initial state: empty list.
+    list-&gt;head = NULL;
+    list-&gt;tail = NULL;
+    list-&gt;size = 0;
+
+    // Requirement: A generic list must know how to clean its own data.
+    if (uninitialize == NULL)
+    {
+        // Clean up manager if initialization is incomplete.
+        free(list);
+
+        return NULL;
+    }
+
+    list-&gt;uninitialize = uninitialize;
+
+    return list;
+}
+
+/**
+ * @brief Inserts a new node at the beginning of the list.
+ * @param list Pointer to the list manager.
+ * @param data Pointer to the user data to store.
+ * @return true on success, false on failure.
+ */
+bool push_front(List* list, void* data)
+{
+    // Ensure we have valid pointers.
+    if (list == NULL || data == NULL)
+    {
+        return false;
+    }
+
+    // Allocate for a new node.
+    Node* new_node = (Node*)malloc(sizeof(Node));
+
+    if (new_node == NULL)
+    {
+        return false;
+    }
+
+    // Configure new node to point next to the current head.
+    new_node-&gt;data = data;
+    new_node-&gt;previous = NULL;
+    new_node-&gt;next = list-&gt;head;
+
+    if (list-&gt;head != NULL)
+    {
+        // Link the old head back to the new node.
+        list-&gt;head-&gt;previous = new_node;
+    }
+    else
+    {
+        // If list was empty, this new node is also the tail.
+        list-&gt;tail = new_node;
+    }
+
+    // Update the manager's head to our new node.
+    list-&gt;head = new_node;
+    list-&gt;size++;
+
+    return true;
+}
+
+/**
+ * @brief Inserts a new node at the end of the list.
+ * @param list Pointer to the list manager.
+ * @param data Pointer to the user data to store.
+ * @return true on success, false on failure.
+ */
+bool push_back(List* list, void* data)
+{
+    // Ensure we have valid pointers.
+    if (list == NULL || data == NULL)
+    {
+        return false;
+    }
+
+    // Allocate memory for a new node.
+    Node* new_node = (Node*)malloc(sizeof(Node));
+
+    if (new_node == NULL)
+    {
+        return false;
+    }
+
+    // Configure new node to point previous to the current tail.
+    new_node-&gt;data = data;
+    new_node-&gt;next = NULL;
+    new_node-&gt;previous = list-&gt;tail;
+
+    if (list-&gt;tail != NULL)
+    {
+        // Link the old tail forward to the new node.
+        list-&gt;tail-&gt;next = new_node;
+    }
+    else
+    {
+        // If list was empty, this new node is also the head.
+        list-&gt;head = new_node;
+    }
+
+    // Update the manager's tail to our new node.
+    list-&gt;tail = new_node;
+    list-&gt;size++;
+
+    return true;
+}
+
+/**
+ * @brief Iterates through the list and executes a callback for each element.
+ * @param list Pointer to the list manager.
+ * @param callback Function to execute on each data pointer.
+ */
+void forEach(const List* list, void (*callback)(void*))
+{
+    // Ensure we have a list, nodes, and a function to run.
+    if (list == NULL || list-&gt;head == NULL || callback == NULL)
+    {
+        return;
+    }
+
+    Node* current = list-&gt;head;
+
+    // Standard linear traversal.
+    while (current != NULL)
+    {
+        callback(current-&gt;data);
+
+        current = current-&gt;next;
+    }
+}
+
+/**
+ * @brief Searches for an element using a custom comparison predicate.
+ * @param list Pointer to the list manager.
+ * @param predicate Comparison function returning bool.
+ * @param key The value to search for.
+ * @return Pointer to the data if found, NULL otherwise.
+ */
+void* find(const List* list, bool (*predicate)(void*, void*), void* key)
+{
+    // Ensure we have a list, head, and a callback to run.
+    if (list == NULL || list-&gt;head == NULL || predicate == NULL)
+    {
+        return NULL;
+    }
+
+    Node* current = list-&gt;head;
+
+    while (current != NULL)
+    {
+        // Use the predicate function to check if this is the data we want.
+        if (predicate(current-&gt;data, key))
+        {
+            return current-&gt;data;
+        }
+
+        current = current-&gt;next;
+    }
+
+    // Exhausted list without a match.
+    return NULL;
+}
+
+/**
+ * @brief Removes the first element and returns its data.
+ * @param list Pointer to the list manager.
+ * @return Pointer to user data (caller must now manage this memory).
+ */
+void* pop_front(List* list)
+{
+    // Ensure we have valid pointers.
+    if (list == NULL || list-&gt;head == NULL)
+    {
+        return NULL;
+    }
+
+    Node* remove_me = list-&gt;head;
+
+    void* data = remove_me-&gt;data;
+
+    // Shift head forward.
+    list-&gt;head = remove_me-&gt;next;
+
+    if (list-&gt;head != NULL)
+    {
+        // Sever the link to the old head.
+        list-&gt;head-&gt;previous = NULL;
+    }
+    else
+    {
+        // List is now empty.
+        list-&gt;tail = NULL;
+    }
+
+    // Free only the node container, not the data.
+    free(remove_me);
+
+    list-&gt;size--;
+
+    return data;
+}
+
+/**
+ * @brief Removes the last element and returns its data.
+ * @param list Pointer to the list manager.
+ * @return Pointer to user data (caller must now manage this memory).
+ */
+void* pop_back(List* list)
+{
+    // Ensure we have valid pointers.
+    if (list == NULL || list-&gt;tail == NULL)
+    {
+        return NULL;
+    }
+
+    Node* remove_me = list-&gt;tail;
+
+    void* data = remove_me-&gt;data;
+
+    // Shift the tail backwards.
+    list-&gt;tail = remove_me-&gt;previous;
+
+    if (list-&gt;tail != NULL)
+    {
+        // Sever the link to the old tail.
+        list-&gt;tail-&gt;next = NULL;
+    }
+    else
+    {
+        // List is now empty.
+        list-&gt;head = NULL;
+    }
+
+    free(remove_me);
+
+    list-&gt;size--;
+
+    return data;
+}
+
+/**
+ * @brief Clears all nodes/data and destroys the list manager.
+ * @param list Pointer to the list manager to be destroyed.
+ */
+void clear(List* list)
+{
+    // Ensure we have a list to clear.
+    if (list == NULL || list-&gt;size == 0)
+    {
+        return;
+    }
+
+    Node* current = list-&gt;head;
+
+    // Tear-down loop.
+    while (current != NULL)
+    {
+        Node* next = current-&gt;next;
+
+        // Use the saved callback to free the data.
+        if (list-&gt;uninitialize != NULL)
+        {
+            list-&gt;uninitialize(current-&gt;data);
+        }
+
+        // Free the library's internal Node structure.
+        free(current);
+
+        current = next;
+    }
+
+    // Clear fields.
+    list-&gt;head = NULL;
+    list-&gt;tail = NULL;
+    list-&gt;size = 0;
+
+    // Final clean up: Free the list manager itself.
+    free(list);
+}</code></pre>
+
+                <p><strong>Program Driver (<code>src/darwin/list/doubly-linked-list/main.c</code>):</strong></p>
+
+                <!-- Doubly Linked List Driver C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">/**
+ * @file        :   main.c
+ * @author      :   Braiden Gole
+ * @brief       :   Demonstration of an advanced generic Doubly Linked List.
+ * @details     :   This program showcases positional insertion (front/back), 
+ *                  searching with predicates, and the importance of automated 
+ */                  memory management using function callbacks.
+ *                  Compile:
+ *                  clang ./src/darwin/list/doubly-linked-list/main.c ./src/darwin/list/doubly-linked-list/doubly_linked_list.c -I./include -o ./bin/doubly_linked_list_test
+ * @version     :   1.0
+ * @date        :   2026-05-13
+ */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+// Include header files.
+#include "darwin/list/doubly_linked_list.h"
+
+int main(void)
+{
+    /**
+     * We pass the 'destroy' function pointer here. This is crucial for 
+     * generic containers. Since the list stores 'void*', it doesn't know 
+     * if the data is a simple int or a complex heap-allocated string. 
+     * By saving 'destroy' in the List struct, the list can automatically 
+     * clean up its own contents during 'clear()' or 'pop()' operations.
+     */
+    List* list = initialize(destroy);
+
+    if (list == NULL)
+    {
+        fprintf(stderr, "Out of memory!\n");
+
+        return 1;
+    }
+
+    // Adding data to both ends to demonstrate doubly linked list flexibility.
+    push_back(list, make_text("Middle"));
+    push_back(list, make_text("Tail"));
+    push_front(list, make_text("Head"));
+
+    // Traverse the list using generic 'forEach' and print callback.
+    printf("%s", "List: ");
+    forEach(list, print);
+    printf("%s", "\n\n");
+
+    char* key = "Middle";
+
+    printf("%s '%s'%s", "Searching for", key, "...\n");
+
+    // Since we use void*, we pass 'is_match' to define how to compare the data.
+    void* found = find(list, is_match, key);
+
+    if (found != NULL)
+    {
+        printf("%s %s%c", "Found:", (char*)found, '\n');
+    }
+    else
+    {
+        printf("%s", "Not found!.\n");
+    }
+
+    printf("%c", '\n');
+
+    // When we pop an item, the List removes the Node and returns the data.
+    // At this point, the List gives up ownership. We must manually call destroy
+    // on the returned data to prevent a memory leak.
+    char* front_data = (char*)pop_front(list);
+
+    if (front_data != NULL)
+    {
+        printf("%s %s%c", "Popped:", front_data, '\n');
+
+        destroy(front_data);
+    }
+
+    char* back_data = (char*)pop_back(list);
+
+    if (back_data != NULL)
+    {
+        printf("%s %s%c", "Popped:", back_data, '\n');
+
+        destroy(back_data);
+    }
+
+    printf("%c", '\n');
+
+    // Display the list after modification.
+    printf("%s", "List: ");
+    forEach(list, print);
+    printf("%c", '\n');
+
+    /**
+     * 'clear' iterates through any nodes left in the list (in this case, "Middle").
+     * For every node it finds, it calls the 'destroy' function we assigned 
+     * during initialize(). This ensures a Deep Clean of all heap memory.
+     */
+    clear(list);
+
+    return 0;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">16.3 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Doubly linked lists maintain both <code>previous</code> and <code>next</code> pointers, enabling bidirectional navigation and efficient tail insertion or removal.</li>
+                    <li class="mb-2">Generic containers using <code>void*</code> pointers decouple data storage from specific types, maximizing software reusability.</li>
+                    <li class="mb-2">Passing destructor function pointers into initialization routines automates deep-clean memory management across dynamic structures.</li>
+                    <li class="mb-2">Always handle memory ownership transfers explicitly when popping data payloads out of container nodes.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_15.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Function Pointers, Callbacks
+                </a>
+                <a href="chapter_17.html" class="btn btn-primary btn-sm">
+                    C &amp; C++ <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

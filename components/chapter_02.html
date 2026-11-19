@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 2: Primitive Types & Memory Layout - C Unlocked by Braiden Golle." />
+        <meta name="author" content="Braiden Golle" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, pointers, and memory management by Braiden Golle." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 2: Primitive Types &amp; Memory Layout | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 2: Primitive Types &amp; Memory Layout</h2>
+                <div class="lead mb-4">
+                    Unlike high-level languages that abstract memory management, C forces you to confront the exact byte width, binary representation, and hardware storage layout of every data type.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">2.1 Fundamental Integer &amp; Floating-Point Types</h4>
+                <p>The C standard guarantees minimum sizing requirements rather than absolute byte widths across all target architectures. A <code>char</code> is guaranteed to be at least 8 bits, an <code>int</code> matches the natural word size of the processor architecture, and standard floats conform to IEEE-754 specifications.</p>
+                
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered table-sm small align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data Type</th>
+                                <th>Minimum Size (Bytes)</th>
+                                <th>Typical Range</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>char</code></td>
+                                <td>1 byte</td>
+                                <td>-128 to 127 (or 0 to 255 unsigned)</td>
+                            </tr>
+                            <tr>
+                                <td><code>short int</code></td>
+                                <td>2 bytes</td>
+                                <td>-32,768 to 32,767</td>
+                            </tr>
+                            <tr>
+                                <td><code>int</code></td>
+                                <td>4 bytes</td>
+                                <td>-2,147,483,648 to 2,147,483,647</td>
+                            </tr>
+                            <tr>
+                                <td><code>long long</code></td>
+                                <td>8 bytes</td>
+                                <td>-9.22 quintillion to +9.22 quintillion</td>
+                            </tr>
+                            <tr>
+                                <td><code>float</code></td>
+                                <td>4 bytes</td>
+                                <td>~7 digits of precision (IEEE-754)</td>
+                            </tr>
+                            <tr>
+                                <td><code>double</code></td>
+                                <td>8 bytes</td>
+                                <td>~15-17 digits of precision (IEEE-754)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">2.2 Determining Sizing Dynamically via <code>sizeof</code></h4>
+                <p>Because type widths can vary across 32-bit, 64-bit, and embedded microcontrollers, C provides the compile-time <code>sizeof</code> operator to query exact memory footprints.</p>
+
+                <!-- Highlighted C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main(void)
+{
+    // Query exact byte allocation sizes using the sizeof operator.
+    size_t character_size = sizeof(char);
+    size_t integer_size = sizeof(int);
+    size_t integer_pointer_size = sizeof(int*);
+
+    // Safely print memory characteristics to standard output.
+    int number_of_characters_printed = printf("Memory Sizing Report:\n"
+        " - char size: %zu byte(s)\n"
+        " - int size: %zu byte(s)\n"
+        " - pointer size: %zu byte(s)\n", character_size, integer_size, integer_pointer_size);
+
+    if (number_of_characters_printed &lt; 0)
+    {
+        fprintf(stderr, "Error: Failed to write output stream.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">2.3 The Role of <code>size_t</code> in Array Sizing</h4>
+                <p>When working with arrays and memory buffers, you will frequently encounter <code>size_t</code>. Although often conceptualized as a type definition representing the structural memory boundary of objects, <code>size_t</code> is an unsigned integer type guaranteed by the C standard to be large enough to hold the size in bytes of any object or array that can theoretically exist on your target architecture (spanning 32 bits on 32-bit systems and 64 bits on 64-bit systems).</p>
+                <p>Using <code>size_t</code> for array indexing and loop bounds is critical for robust systems code because it prevents negative-value indexing bugs and eliminates overflow errors when managing massive data buffers.</p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">2.4 Fixed-Width Integers via <code>&lt;stdint.h&gt;</code></h4>
+                <p>For systems-level programming where exact bit widths are non-negotiable (such as network protocols, file parsers, or hardware register mapping), always rely on fixed-width types:</p>
+                
+                <ul class="mb-4">
+                    <li class="mb-2"><strong>Signed Integers:</strong> <code>int8_t</code>, <code>int16_t</code>, <code>int32_t</code>, <code>int64_t</code></li>
+                    <li class="mb-2"><strong>Unsigned Integers:</strong> <code>uint8_t</code>, <code>uint16_t</code>, <code>uint32_t</code>, <code>uint64_t</code></li>
+                </ul>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">2.5 Endianness &amp; Memory Byte Layout</h4>
+                <p>When a multi-byte integer (such as a 32-bit <code>int</code> or 64-bit pointer) is stored in RAM, the order in which its bytes are arranged depends on your CPU architecture's **endianness**:</p>
+                
+                <ul class="mb-4">
+                    <li class="mb-2"><strong>Little-Endian (x86_64, ARM):</strong> Stores the <em>Least Significant Byte (LSB)</em> at the lowest memory address. For example, the hexadecimal value <code>0x12345678</code> is laid out in memory sequentially as <code>78 56 34 12</code>.</li>
+                    <li class="mb-2"><strong>Big-Endian (Network Byte Order, older mainframes):</strong> Stores the <em>Most Significant Byte (MSB)</em> at the lowest memory address (<code>12 34 56 78</code>).</li>
+                </ul>
+
+                <p>We can inspect the active architecture's byte ordering at runtime by casting an integer pointer to a character pointer:</p>
+
+                <!-- Endianness Inspection Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+
+int main(void)
+{
+    uint32_t hexadecimal_identifier = 0x00000001;
+    
+    // Inspect the lowest memory address of the integer via a byte pointer.
+    unsigned char* hex_pointer = (unsigned char*)&hexadecimal_identifier;
+
+    if (*hex_pointer == 0x01)
+    {
+        printf("Architecture Endianness: Little-Endian (LSB stored first).\n");
+    }
+    else
+    {
+        printf("Architecture Endianness: Big-Endian (MSB stored first).\n");
+    }
+
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">2.6 Extended Demonstration: Bit Representation and Integer Overflow Behavior</h4>
+                <p>Understanding signed integer storage requires inspecting how numbers wrap around under overflow conditions. The following comprehensive example illustrates fixed-width integer bounds, bit shifting, and signed vs. unsigned overflow semantics:</p>
+
+                <!-- Extended Demonstration Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;limits.h&gt;
+
+// Function prototype to inspect individual bits of a byte.
+void inspect_byte_bits(uint8_t byte_value);
+
+int main(void)
+{
+    // 1. Demonstrate unsigned integer wrap-around behavior.
+    uint8_t maximum_sensor_count = UINT8_MAX;
+
+    printf("Initial Sensor Count (Max uint8_t): %u\n", maximum_sensor_count);
+
+    // Incrementing past maximum triggers defined unsigned wrap-around to zero.
+    maximum_sensor_count++;
+
+    printf("Sensor Count After Overflow Increment: %u\n", maximum_sensor_count);
+
+    // 2. Inspect bit representation of a specific signed value.
+    
+    // Cast or direct assignment example.
+    int8_t signal_amplitude_gain = -12.0f;
+    int8_t negative_voltage_reading = -55;
+
+    printf("\nInspecting Bit Pattern for Signed Value: %d\n", negative_voltage_reading);
+
+    inspect_byte_bits((uint8_t)negative_voltage_reading);
+
+    // 3. Demonstrate floating-point precision limitations.
+    float standard_precision_pi = 3.14159265358979323846f;
+    double high_precision_pi = 3.14159265358979323846;
+
+    printf("\nFloating-Point Precision Comparison:\n");
+    printf(" - float representation : %.10f\n", standard_precision_pi);
+    printf(" - double representation: %.15lf\n", high_precision_pi);
+
+    return EXIT_SUCCESS;
+}
+
+void inspect_byte_bits(uint8_t byte_value)
+{
+    printf("Binary Representation: ");
+
+    for (int bit_index = 7; bit_index &gt;= 0; bit_index--)
+    {
+        int extracted_bit = (byte_value &gt;&gt; bit_index) &amp; 1;
+
+        printf("%d", extracted_bit);
+
+        if (bit_index == 4)
+        {
+            // Nibble visual separator.
+            printf(" ");
+        }
+    }
+
+    printf("\n");
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">2.7 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Never assume <code>int</code> is always 4 bytes across embedded platforms—use <code>&lt;stdint.h&gt;</code> when explicit bit bounds matter.</li>
+                    <li class="mb-2">Always use <code>size_t</code> for array counts, indexing, and memory allocation parameters.</li>
+                    <li class="mb-2">Use the <code>%zu</code> format specifier when printing <code>sizeof</code> or <code>size_t</code> values to prevent format-string mismatch warnings.</li>
+                    <li class="mb-2">Be mindful of system endianness when serializing binary data structures across network interfaces or storage files.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_01.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Environment Setup
+                </a>
+                <a href="chapter_03.html" class="btn btn-primary btn-sm">
+                    Control Flow <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

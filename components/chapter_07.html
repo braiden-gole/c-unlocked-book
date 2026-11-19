@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 7: Dynamic Memory Allocation & Heap Management - C Unlocked by Braiden Golle." />
+        <meta name="author" content="Braiden Golle" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, pointers, and memory management by Braiden Golle." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 7: Dynamic Memory Allocation | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 7: Dynamic Memory Allocation &amp; Heap Management</h2>
+                <div class="lead mb-4">
+                    Dynamic memory allocation allows C programs to request and manage RAM from the heap at runtime rather than compile time. Mastering heap allocation functions, verifying allocation success, resizing buffers, and preventing memory leaks is essential for building robust systems software.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">7.1 The Heap vs. The Stack &amp; Allocation Fundamentals</h4>
+                <p>While automatic local variables reside on the stack with sizes determined strictly at compile time, dynamic memory management interacts directly with the heap. The heap provides a vast pool of unmanaged RAM where memory blocks can be requested, resized, and released dynamically as application workloads fluctuate.</p>
+                <p>C provides standard library routines specifically <code>malloc()</code>, <code>calloc()</code>, <code>realloc()</code>, and <code>free()</code> declared in <code>&lt;stdlib.h&gt;</code> to govern heap allocation. For example, invoking <code>malloc(sizeof(int32_t) * 10)</code> requests a contiguous block of bytes capable of storing ten 32-bit integers.</p>
+                <p><strong>A foundational rule of C systems architecture governs every allocation: every single call to <code>malloc()</code> (or <code>calloc()</code> and <code>realloc()</code>) requires a matching call to <code>free()</code>.</strong> Failing to release heap blocks when they are no longer needed results in progressive memory leaks that can exhaust system resources and crash long-running applications.</p>
+                <p>The following example demonstrates a basic heap allocation request using <code>malloc()</code> and its corresponding cleanup using <code>free()</code>:</p>
+
+                <!-- Basic Malloc Allocation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+
+int main(void)
+{
+    // Define the element size parameter for allocation.
+    size_t size = 4;
+
+    // Allocate memory on the heap for 4 integers using malloc().
+    int32_t* buffer = (int32_t*)malloc(size * sizeof(int32_t));
+
+    // Verify that the heap allocation returned a valid non-null pointer.
+    if (buffer == NULL)
+    {
+        // Print detailed error message to standard error stream.
+        fprintf(stderr, "Error: Heap allocation failed.\n");
+
+        // Terminate execution returning a standard failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Populate heap memory block with calculated values.
+    for (size_t index = 0; index &lt; size; index++)
+    {
+        // Assign scaled integer values to each buffer index.
+        buffer[index] = (int32_t)((index + 1) * 10);
+
+        // Print the stored buffer element for verification.
+        printf("Buffer Element %zu: %d\n", index, buffer[index]);
+    }
+
+    // Release heap memory block back to the system.
+    free(buffer);
+
+    // Nullify pointer immediately after free to prevent dangling references.
+    buffer = NULL;
+
+    // Return success status code to the operating system.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">7.2 Handling Allocation Failures &amp; Defensive Null Validation</h4>
+                <p>A critical rule in systems programming is that heap allocation can fail whenever the operating system exhausts available memory or virtual address space. When failure occurs, <code>malloc()</code> returns <code>NULL</code> rather than a valid memory address.</p>
+                <p>Attempting to dereference an unvalidated pointer resulting from a failed allocation triggers immediate segmentation faults and undefined behavior. Production-grade C code must always validate pointers against <code>NULL</code> before performing read or write operations.</p>
+                <p>The following example illustrates defensive null checking to prevent illegal pointer dereferencing when allocation limits are breached:</p>
+
+                <!-- Defensive Null Validation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+bool allocate_secure_buffer(size_t size)
+{
+    // Request an unreasonably large memory block to simulate allocation failure.
+    int32_t* block = (int32_t*)malloc(size);
+
+    // Defensively check for NULL before pointer usage.
+    if (block == NULL)
+    {
+        // Print descriptive error message to standard error stream.
+        fprintf(stderr, "Error: Allocation failed. Received NULL pointer.\n");
+
+        // Return false indicating failure status.
+        return false;
+    }
+
+    // Safe usage occurs here.
+    free(block);
+
+    // Nullify pointer to prevent dangling reference bugs.
+    block = NULL;
+
+    // Return true indicating successful execution.
+    return true;
+}
+
+int main(void)
+{
+    // Define massive allocation size guaranteed to trigger failure.
+    size_t massive_allocation_size = SIZE_MAX;
+
+    // Verify defensive handling when allocation fails.
+    if (!allocate_secure_buffer(massive_allocation_size))
+    {
+        // Print confirmation message indicating successful interception.
+        printf("Defensive validation successfully caught allocation failure.\n");
+    }
+
+    // Return success status code to operating system.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">7.3 Dynamic Buffer Resizing with Realloc</h4>
+                <p>When the required capacity of a dynamic buffer grows beyond its initial bounds, developers can resize the existing allocation using <code>realloc()</code>. This function manages copying existing data to a larger contiguous memory block when in-place expansion is impossible, while automatically releasing the original allocation.</p>
+                <p>Developers must assign the return value of <code>realloc()</code> to a temporary pointer variable to prevent memory leaks in the event that the reallocation request returns <code>NULL</code>.</p>
+                <p>The following example shows safe buffer resizing using a temporary pointer to preserve data during allocation adjustments:</p>
+
+                <!-- Realloc Resizing C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+
+int main(void)
+{
+    // Define initial and resized element counts.
+    size_t initial_count = 2;
+    size_t resized_count = 4;
+
+    // Allocate initial buffer memory block using malloc().
+    int32_t* buffer = (int32_t*)malloc(initial_count * sizeof(int32_t));
+
+    // Verify initial allocation success.
+    if (buffer == NULL)
+    {
+        // Return failure status if allocation fails.
+        return EXIT_FAILURE;
+    }
+
+    // Populate initial elements.
+    buffer[0] = 10;
+    buffer[1] = 20;
+
+    // Use a temporary pointer for realloc to prevent memory leaks on failure.
+    int32_t* temporary_buffer = (int32_t*)realloc(buffer, resized_count * sizeof(int32_t));
+
+    // Defensively check if reallocation succeeded.
+    if (temporary_buffer == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Reallocation failed.\n");
+
+        // Free original buffer memory to prevent memory leaks.
+        free(buffer);
+
+        // Nullify pointer.
+        buffer = NULL;
+
+        // Return failure status.
+        return EXIT_FAILURE;
+    }
+
+    // Update main pointer to reference resized buffer.
+    buffer = temporary_buffer;
+
+    // Populate newly allocated elements in the expanded buffer range.
+    buffer[2] = 30;
+    buffer[3] = 40;
+
+    // Print successfully updated buffer contents.
+    printf("Resized buffer successfully updated: %d, %d, %d, %d\n", buffer[0], buffer[1], buffer[2], buffer[3]);
+
+    // Release heap memory block back to system.
+    free(buffer);
+
+    // Nullify pointer to prevent dangling references.
+    buffer = NULL;
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">7.4 Comprehensive Systems Demonstration: Dynamic Heap Buffer Manager</h4>
+                <p>The following detailed systems demonstration illustrates dynamic heap allocation, defensive null validation, buffer population, safe reallocation utilizing current size validation, and proper memory deallocation:</p>
+
+                <!-- Dynamic Heap Allocation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Function prototype for resizing a dynamic telemetry record buffer.
+int32_t* resize_telemetry_buffer(int32_t* const original, size_t size, size_t new_count);
+
+int main(void)
+{
+    // Define initial and expanded element size parameters.
+    size_t initial_count = 4;
+    size_t expanded_count = 8;
+
+    // Allocate initial memory block on the heap using malloc.
+    int32_t* telemetry_records = (int32_t*)malloc(initial_count * sizeof(int32_t));
+
+    // Defensively check if malloc succeeded or returned NULL.
+    if (telemetry_records == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Initial heap allocation via malloc failed.\n");
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Populate initial telemetry records.
+    for (size_t index = 0; index &lt; initial_count; index++)
+    {
+        // Assign scaled telemetry values to buffer elements.
+        telemetry_records[index] = (int32_t)((index + 1) * 100);
+    }
+
+    // Print initial telemetry record values.
+    printf("--- Initial Dynamic Telemetry Records ---\n");
+
+    for (size_t index = 0; index &lt; initial_count; index++)
+    {
+        // Print each initial record index and value.
+        printf("Record Index %zu: %d\n", index, telemetry_records[index]);
+    }
+
+    // Resize the dynamic buffer using realloc to accommodate additional records.
+    int32_t* resized_telemetry_buffer = resize_telemetry_buffer(telemetry_records, initial_count, expanded_count);
+
+    // Verify reallocation success.
+    if (resized_telemetry_buffer == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to resize dynamic telemetry buffer.\n");
+
+        // Free original buffer before terminating to prevent memory leak.
+        free(telemetry_records);
+
+        // Nullify pointer.
+        telemetry_records = NULL;
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Update pointer to reference the newly resized heap block.
+    telemetry_records = resized_telemetry_buffer;
+
+    // Populate newly allocated elements in the expanded buffer range.
+    for (size_t index = initial_count; index &lt; expanded_count; index++)
+    {
+        // Assign values to newly expanded slots.
+        telemetry_records[index] = (int32_t)((index + 1) * 100);
+    }
+
+    // Print expanded telemetry record values.
+    printf("--- Expanded Dynamic Telemetry Records ---\n");
+    
+    for (size_t index = 0; index &lt; expanded_count; index++)
+    {
+        // Print each expanded record index and value.
+        printf("Record Index %zu: %d\n", index, telemetry_records[index]);
+    }
+
+    // Safely deallocate the heap memory block.
+    free(telemetry_records);
+
+    // Nullify pointer immediately after free to prevent dangling reference bugs.
+    telemetry_records = NULL;
+
+    // Print confirmation of memory release.
+    printf("Dynamic heap memory successfully released and pointer nullified.\n");
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}
+
+int32_t* resize_telemetry_buffer(int32_t* const original, size_t size, size_t new_count)
+{
+    // Validate arguments defensively.
+    if (original == NULL || new_count == 0)
+    {
+        // Return NULL if pointer is invalid or size is zero.
+        return NULL;
+    }
+
+    // Use size to defensively verify that the requested size is an expansion.
+    if (new_count &lt;= size)
+    {
+        // Print error message regarding invalid expansion size.
+        fprintf(stderr, "Error: New element size (%zu) must exceed current size (%zu).\n", new_count, size);
+
+        // Return NULL.
+        return NULL;
+    }
+
+    // Resize the existing heap memory block using realloc.
+    int32_t* reallocated_memory_block = (int32_t*)realloc(original, new_count * sizeof(int32_t));
+
+    // Defensively check if realloc succeeded.
+    if (reallocated_memory_block == NULL)
+    {
+        // Print error message if reallocation fails.
+        fprintf(stderr, "Error: Heap reallocation via realloc failed.\n");
+
+        // Return NULL.
+        return NULL;
+    }
+
+    // Return reallocated memory block pointer.
+    return reallocated_memory_block;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">7.5 Additional Example: Zero-Initialized Calloc Allocation</h4>
+                <p>When allocating buffers that require guaranteed initial zero values rather than indeterminate garbage data, C provides <code>calloc()</code>. Unlike <code>malloc()</code>, <code>calloc()</code> takes two arguments the number of elements and the byte size of each element and explicitly zeroes out every allocated byte.</p>
+                <p>The following systems program demonstrates safe allocation using <code>calloc()</code>, explicit error checking, and proper memory deallocation via <code>free()</code>:</p>
+
+                <!-- Calloc Allocation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+int main(void)
+{
+    // Define sensor node size parameter.
+    size_t sensor_node_count = 6;
+
+    // Allocate and zero-initialize memory block using calloc.
+    int32_t* zero_initialized_sensor_grid = (int32_t*)calloc(sensor_node_count, sizeof(int32_t));
+
+    // Defensively check if calloc succeeded.
+    if (zero_initialized_sensor_grid == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Heap allocation via calloc failed.\n");
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Verify that calloc successfully initialized all elements to zero.
+    printf("--- Verifying Calloc Zero Initialization ---\n");
+    
+    for (size_t index = 0; index &lt; sensor_node_count; index++)
+    {
+        // Print each sensor node value to confirm zero-initialization.
+        printf("Sensor Node Index %zu Value: %d\n", index, zero_initialized_sensor_grid[index]);
+    }
+
+    // Safely deallocate heap memory matching the allocation call.
+    free(zero_initialized_sensor_grid);
+
+    // Nullify pointer to prevent dangling reference bugs.
+    zero_initialized_sensor_grid = NULL;
+
+    // Print confirmation of memory deallocation.
+    printf("Calloc memory block successfully released and pointer nullified.\n");
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">7.6 Dynamic String Allocation &amp; Instance Return</h4>
+                <p>Unlike string literals stored in read-only memory or local stack arrays whose activation frames are destroyed upon function exit, dynamically allocated strings reside safely on the heap. This allows functions to construct, allocate, and return string instances to caller functions.</p>
+                <p>The following systems program demonstrates allocating a string instance dynamically on the heap, copying text into it securely using bounds-checked functions, returning the instance pointer, and releasing memory properly:</p>
+
+                <!-- Dynamic String Allocation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Function prototype for creating and returning a dynamically allocated string instance.
+char* initialize_system_message(const char* const text);
+
+int main(void)
+{
+    // Define constant source text string literal.
+    const char* const text = "System initialized successfully.";
+
+    // Invoke function to allocate and return a dynamic string instance.
+    char* message = initialize_system_message(text);
+
+    // Defensively validate that the returned string instance pointer is not null.
+    if (message == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to allocate dynamic string instance.\n");
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Output the successfully retrieved dynamic string instance.
+    printf("Retrieved Dynamic String Instance: %s\n", message);
+
+    // Free the dynamically allocated string instance (every malloc/allocation requires a matching free).
+    free(message);
+
+    // Nullify the pointer immediately after free to prevent dangling reference bugs.
+    message = NULL;
+
+    // Print confirmation of dynamic string memory release.
+    printf("Dynamic string instance memory successfully released and pointer nullified.\n");
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}
+
+char* initialize_system_message(const char* const text)
+{
+    // Validate input parameters defensively.
+    if (text == NULL)
+    {
+        // Return NULL if input pointer is invalid.
+        return NULL;
+    }
+
+    // Calculate required buffer size including space for the mandatory null terminator byte.
+    size_t length = strlen(text) + 1;
+
+    // Allocate memory on the heap for the string instance using malloc.
+    char* source = (char*)malloc(length);
+
+    // Defensively check if malloc succeeded.
+    if (source == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Heap allocation for dynamic string failed.\n");
+
+        // Return NULL.
+        return NULL;
+    }
+
+    // Copy source text safely into the newly allocated heap memory block.
+    // Using memcpy or snprintf ensures strict bounds safety.
+    snprintf(source, length, "%s", text);
+
+    // Return the heap-allocated string instance pointer to the caller.
+    return source;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">7.7 Advanced Systems Demonstration: Dynamic 3D Matrix &amp; Tensor Allocation</h4>
+                <p>When working with complex multi-dimensional datasets such as 3D volumetric scans (e.g., medical CT scans or spatial simulation grids), automatic stack allocation is insufficient. Instead, programs must dynamically allocate rank-3 tensors on the heap using triple pointers (<code>uint32_t***</code>).</p>
+                <p>The following systems demonstration illustrates multi-tier dynamic heap allocation for a 3D model voxel space, defensive cleanup during partial allocation failures, 3D convolution processing via a spatial transformation kernel, and systematic deallocation:</p>
+
+                <!-- Dynamic 3D Model C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Define dimensions for our 3D model voxel space (Width, Height, Depth).
+#define MODEL_WIDTH_DIMENSION 4
+#define MODEL_HEIGHT_DIMENSION 4
+#define MODEL_DEPTH_DIMENSION 4
+
+// Function prototypes adhering to strict pointer contracts.
+uint32_t*** initialize_three_dimensional_model(size_t width, size_t height, size_t depth);
+void free_three_dimensional_model(uint32_t*** model_tensor, size_t height, size_t depth);
+bool apply_three_dimensional_transformation(uint32_t*** source_model, uint32_t*** destination_model,
+                                                   size_t width, size_t height, size_t depth,
+                                                   const float transformation_kernel[3][3][3]);
+
+int main(void)
+{
+    // Initialize dimension variables.
+    size_t width = MODEL_WIDTH_DIMENSION;
+    size_t height = MODEL_HEIGHT_DIMENSION;
+    size_t depth = MODEL_DEPTH_DIMENSION;
+
+    // Allocate the primary 3D voxel model matrix on the heap.
+    uint32_t*** source_three_d_model = initialize_three_dimensional_model(width, height, depth);
+
+    // Defensively check allocation success.
+    if (source_three_d_model == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to allocate memory for source 3D model matrix.\n");
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Allocate the destination 3D voxel model matrix for transformed output.
+    uint32_t*** destination_three_d_model = initialize_three_dimensional_model(width, height, depth);
+
+    // Defensively check allocation success.
+    if (destination_three_d_model == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to allocate memory for destination 3D model matrix.\n");
+
+        // Clean up previously allocated source model before terminating.
+        free_three_dimensional_model(source_three_d_model, height, depth);
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Populate the source 3D model matrix with initial volumetric density values.
+    for (size_t z_coordinate = 0; z_coordinate &lt; depth; z_coordinate++)
+    {
+        for (size_t y_coordinate = 0; y_coordinate &lt; height; y_coordinate++)
+        {
+            for (size_t x_coordinate = 0; x_coordinate &lt; width; x_coordinate++)
+            {
+                // Assign a synthetic density gradient pattern.
+                source_three_d_model[z_coordinate][y_coordinate][x_coordinate] =
+                    (uint32_t)((x_coordinate + 1) * (y_coordinate + 1) * (z_coordinate + 1) * 10);
+            }
+        }
+    }
+
+    // Print initial center voxel value for verification.
+    printf("--- Original 3D Model Center Voxel Value at (1, 1, 1): %u ---\n", source_three_d_model[1][1][1]);
+
+    // Define a 3-dimensional spatial filter matrix (3x3x3 tensor) for volumetric smoothing.
+    const float spatial_smoothing_tensor[3][3][3] = 
+    {
+        {{0.01f, 0.02f, 0.01f},
+         {0.02f, 0.04f, 0.02f},
+         {0.01f, 0.02f, 0.01f}},
+        {{0.02f, 0.04f, 0.02f},
+         {0.04f, 0.16f, 0.04f},
+         {0.02f, 0.04f, 0.02f}},
+        {{0.01f, 0.02f, 0.01f},
+         {0.02f, 0.04f, 0.02f},
+         {0.01f, 0.02f, 0.01f}}
+    };
+
+    // Apply the 3D transformation matrix across the model volume.
+    bool transformation_status = apply_three_dimensional_transformation(
+        source_three_d_model,
+        destination_three_d_model,
+        width, height, depth,
+        spatial_smoothing_tensor);
+
+    // Verify transformation execution success.
+    if (!transformation_status)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: 3D model transformation routine failed.\n");
+
+        // Clean up both 3D models before terminating.
+        free_three_dimensional_model(source_three_d_model, height, depth);
+        free_three_dimensional_model(destination_three_d_model, height, depth);
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Print transformed center voxel value for verification.
+    printf("--- Transformed 3D Model Center Voxel Value at (1, 1, 1): %u ---\n",
+           destination_three_d_model[1][1][1]);
+
+    // Safely deallocate all dynamically generated 3D matrices.
+    free_three_dimensional_model(source_three_d_model, height, depth);
+    free_three_dimensional_model(destination_three_d_model, height, depth);
+
+    // Nullify pointers immediately after free to prevent dangling references.
+    source_three_d_model = NULL;
+    destination_three_d_model = NULL;
+
+    // Print confirmation of successful memory cleanup.
+    printf("3D model memory successfully cleaned up and pointers nullified.\n");
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}
+
+uint32_t*** initialize_three_dimensional_model(size_t width, size_t height, size_t depth)
+{
+    // Validate dimension parameters defensively.
+    if (width == 0 || height == 0 || depth == 0)
+    {
+        // Print error message and return NULL if dimensions are invalid.
+        fprintf(stderr, "Error: 3D model dimensions cannot be zero.\n");
+
+        return NULL;
+    }
+
+    // Allocate array of pointers to 2D planes (Z-axis).
+    uint32_t*** model_tensor = (uint32_t***)malloc(depth * sizeof(uint32_t**));
+
+    // Verify Z-plane pointer array allocation success.
+    if (model_tensor == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to allocate Z-plane pointer array.\n");
+
+        return NULL;
+    }
+
+    // Iterate through depth levels to allocate Y-row pointer arrays.
+    for (size_t z_coordinate = 0; z_coordinate &lt; depth; z_coordinate++)
+    {
+        // Allocate array of pointers to rows (Y-axis) for each Z plane.
+        model_tensor[z_coordinate] = (uint32_t**)malloc(height * sizeof(uint32_t*));
+
+        // Verify Y-row pointer array allocation success.
+        if (model_tensor[z_coordinate] == NULL)
+        {
+            // Print error message to standard error stream.
+            fprintf(stderr, "Error: Failed to allocate Y-row pointer array for depth index %zu.\n", z_coordinate);
+
+            // Clean up already allocated planes prior to failure return.
+            for (size_t cleanup_index = 0; cleanup_index &lt; z_coordinate; cleanup_index++)
+            {
+                free(model_tensor[cleanup_index]);
+            }
+
+            // Free top-level tensor pointer array.
+            free(model_tensor);
+
+            return NULL;
+        }
+
+        // Iterate through rows to allocate contiguous X-column memory blocks.
+        for (size_t y_coordinate = 0; y_coordinate &lt; height; y_coordinate++)
+        {
+            // Allocate contiguous memory for columns (X-axis).
+            model_tensor[z_coordinate][y_coordinate] = (uint32_t*)malloc(width * sizeof(uint32_t));
+
+            // Verify X-column memory allocation success.
+            if (model_tensor[z_coordinate][y_coordinate] == NULL)
+            {
+                // Print error message to standard error stream.
+                fprintf(stderr, "Error: Failed to allocate X-column memory at coordinates (%zu, %zu).\n", z_coordinate, y_coordinate);
+
+                // Clean up previously allocated rows in current plane.
+                for (size_t row_cleanup = 0; row_cleanup &lt; y_coordinate; row_cleanup++)
+                {
+                    free(model_tensor[z_coordinate][row_cleanup]);
+                }
+
+                // Free Y-row pointer array for current plane.
+                free(model_tensor[z_coordinate]);
+
+                // Clean up all previously allocated planes.
+                for (size_t plane_cleanup = 0; plane_cleanup &lt; z_coordinate; plane_cleanup++)
+                {
+                    for (size_t inner_row = 0; inner_row &lt; height; inner_row++)
+                    {
+                        free(model_tensor[plane_cleanup][inner_row]);
+                    }
+
+                    free(model_tensor[plane_cleanup]);
+                }
+
+                // Free top-level tensor pointer array.
+                free(model_tensor);
+
+                return NULL;
+            }
+        }
+    }
+
+    // Return fully allocated 3D tensor pointer.
+    return model_tensor;
+}
+
+bool apply_three_dimensional_transformation(uint32_t*** source_model, uint32_t*** destination_model,
+                                                   size_t width, size_t height, size_t depth,
+                                                   const float transformation_kernel[3][3][3])
+{
+    // Validate pointer contracts defensively.
+    if (source_model == NULL || destination_model == NULL || transformation_kernel == NULL)
+    {
+        // Print error message and return false if any pointer is invalid.
+        fprintf(stderr, "Error: Received null pointer in 3D transformation routine.\n");
+
+        return false;
+    }
+
+    // Process interior voxels avoiding out-of-bounds neighborhood checks.
+    for (size_t z_coordinate = 1; z_coordinate &lt; depth - 1; z_coordinate++)
+    {
+        for (size_t y_coordinate = 1; y_coordinate &lt; height - 1; y_coordinate++)
+        {
+            for (size_t x_coordinate = 1; x_coordinate &lt; width - 1; x_coordinate++)
+            {
+                // Initialize accumulator for convolution calculation.
+                float accumulated_transformation_value = 0.0f;
+
+                // Convolve the 3x3x3 3D transformation matrix kernel over the voxel neighborhood.
+                for (int kernel_z = -1; kernel_z &lt;= 1; kernel_z++)
+                {
+                    for (int kernel_y = -1; kernel_y &lt;= 1; kernel_y++)
+                    {
+                        for (int kernel_x = -1; kernel_x &lt;= 1; kernel_x++)
+                        {
+                            // Retrieve neighbor voxel value from source model.
+                            uint32_t neighbor_voxel_value = source_model
+                                [z_coordinate + kernel_z]
+                                [y_coordinate + kernel_y]
+                                [x_coordinate + kernel_x];
+
+                            // Retrieve corresponding kernel weight.
+                            float kernel_weight = transformation_kernel[kernel_z + 1][kernel_y + 1][kernel_x + 1];
+
+                            // Accumulate weighted neighbor product.
+                            accumulated_transformation_value += ((float)neighbor_voxel_value * kernel_weight);
+                        }
+                    }
+                }
+
+                // Store computed result into destination 3D model matrix.
+                destination_model[z_coordinate][y_coordinate][x_coordinate] = (uint32_t)accumulated_transformation_value;
+            }
+        }
+    }
+
+    // Return true indicating successful transformation execution.
+    return true;
+}
+
+void free_three_dimensional_model(uint32_t*** model_tensor, size_t height, size_t depth)
+{
+    // Validate pointer defensively before attempting deallocation.
+    if (model_tensor == NULL)
+    {
+        return;
+    }
+
+    // Iterate backward to systematically free individual allocations.
+    for (size_t z_coordinate = 0; z_coordinate &lt; depth; z_coordinate++)
+    {
+        // Verify Z-plane pointer is not null before freeing rows.
+        if (model_tensor[z_coordinate] != NULL)
+        {
+            for (size_t y_coordinate = 0; y_coordinate &lt; height; y_coordinate++)
+            {
+                // Free individual X-column memory blocks.
+                free(model_tensor[z_coordinate][y_coordinate]);
+            }
+
+            // Free Y-row pointer array for current plane.
+            free(model_tensor[z_coordinate]);
+        }
+    }
+
+    // Free top-level Z-plane pointer array.
+    free(model_tensor);
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">7.8 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2"><strong>Every call to <code>malloc()</code> (or <code>calloc()</code> / <code>realloc()</code>) requires a matching call to <code>free()</code></strong> to prevent memory leaks.</li>
+                    <li class="mb-2">Always validate the return values of heap allocation functions against <code>NULL</code> before utilizing allocated memory.</li>
+                    <li class="mb-2">Assign <code>realloc()</code> results to temporary pointers to prevent memory leaks when reallocation requests fail.</li>
+                    <li class="mb-2">Immediately assign <code>NULL</code> to pointers after calling <code>free()</code> to eliminate dangling reference vulnerabilities.</li>
+                    <li class="mb-2">When returning dynamically allocated string instances or multi-dimensional tensors from functions, ensure callers take ownership of releasing the allocated heap memory.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_06.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Arrays &amp; Strings
+                </a>
+                <a href="chapter_08.html" class="btn btn-primary btn-sm">
+                    Structures &amp; Unions <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

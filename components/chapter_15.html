@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 15: Function Pointers, Callbacks & Concurrency - C Unlocked by Braiden Golle." />
+        <meta name="author" content="Braiden Golle" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, function pointers, callbacks, and concurrency by Braiden Golle." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 15: Function Pointers, Callbacks &amp; Concurrency | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 15: Function Pointers, Callbacks &amp; Concurrency</h2>
+                <div class="lead mb-4">
+                    In systems programming, executable machine instructions reside in memory just like data. <strong>Function pointers</strong> allow programs to treat code as dynamic values, enabling runtime polymorphism, callback architectures, and dynamic dispatch tables. Combined with POSIX threads (<code>pthreads</code>), function pointers provide the foundation for building multi-threaded concurrent execution engines.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">15.1 Function Pointer Mechanics &amp; Syntax</h4>
+                <p>Just as a standard pointer stores the memory address of an integer or struct, a function pointer stores the memory address of an executable function entry point. Declaring a function pointer requires matching the signature (return type and parameter list) of the target function precisely:</p>
+
+                <!-- Function Pointer Syntax Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">// Declare a function pointer variable named 'arithmetic_operation_pointer'
+// that accepts two integer parameters and returns an integer.
+int (*arithmetic_operation_pointer)(int operand_one, int operand_two);</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">15.2 Callbacks &amp; Higher-Order Functions</h4>
+                <p>Passing function pointers as arguments to other routines creates <strong>callbacks</strong>. This decoupling allows generic modules (such as sorting algorithms, event listeners, or asynchronous dispatchers) to execute custom user-defined logic without knowing the implementation details beforehand.</p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">15.3 Concurrency Fundamentals with POSIX Threads</h4>
+                <p>Modern multi-core processors demand concurrent execution models. POSIX threads (<code>&lt;pthread.h&gt;</code>) provide standard multi-threading capabilities on UNIX-like and macOS systems. Threads execute concurrent routines starting from a designated thread function taking and returning a <code>void*</code> pointer.</p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">15.4 Comprehensive Systems Demonstration 1: Dynamic Dispatch Table &amp; Telemetry Filter</h4>
+                <p>The first intricate demonstration implements a high-frequency sensor telemetry pipeline using an array of function pointers as a dynamic dispatch table, applying custom data transformation callbacks dynamically:</p>
+
+                <!-- First Intricate Example C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Define a function pointer type for telemetry transformation strategies.
+typedef double (*transform_callback_t)(double sensor_reading);
+
+static double apply_kalman_smoothing_filter(double sensor_reading)
+{
+    // Apply smoothing arithmetic by scaling sensor reading and adding a bias offset.
+    double smoothed_reading = sensor_reading * 0.85f + 1.20f;
+
+    // Return the calculated smoothed value.
+    return smoothed_reading;
+}
+
+static double apply_exponential_amplification_filter(double sensor_reading)
+{
+    // Multiply input sensor reading by an amplification factor.
+    double amplified_reading = sensor_reading * 1.50f;
+
+    // Return the amplified telemetry value.
+    return amplified_reading;
+}
+
+static double apply_identity_pass_through_filter(double sensor_reading)
+{
+    // Return input sensor reading unmodified.
+    return sensor_reading;
+}
+
+static void process_telemetry_stream(const double* stream, double* out_stream, size_t count, transform_callback_t callback)
+{
+    // Verify input stream, output stream, and callback pointers defensively against null references.
+    if (stream == NULL || out_stream == NULL || callback == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Received invalid null pointers during telemetry stream processing.\n");
+
+        return;
+    }
+
+    // Iterate sequentially through each sample index in the telemetry stream buffer.
+    for (size_t index = 0; index &lt; count; index++)
+    {
+        // Invoke the dynamically bound function pointer callback on current sample element.
+        out_stream[index] = callback(stream[index]);
+    }
+}
+
+int main(void)
+{
+    // Define constant representing total sample count in streams.
+    const size_t sample_count = 5;
+
+    // Initialize raw telemetry input buffer array with sample data.
+    double telemetry_data[5] = {10.5, 22.1, 19.8, 31.4, 28.6};
+
+    // Initialize processed telemetry output buffer array with zeros.
+    double processed_data[5] = {0.0};
+
+    // Construct a dynamic dispatch table using an array of function pointers.
+    transform_callback_t dispatch_table[] =
+    {
+        apply_identity_pass_through_filter,
+        apply_kalman_smoothing_filter,
+        apply_exponential_amplification_filter
+    };
+
+    // Define descriptive strategy name strings corresponding to dispatch table entries.
+    const char* strategy_names[] =
+    {
+        "Pass-Through",
+        "Kalman Smoothing",
+        "Exponential Amplification"
+    };
+
+    // Print application banner message.
+    printf("=== Dynamic Telemetry Dispatch Table Demonstration ===\n\n");
+
+    // Loop through each strategy index in the dispatch table.
+    for (int strategy_index = 0; strategy_index &lt; 3; strategy_index++)
+    {
+        // Print description of active strategy being applied.
+        printf("Applying Strategy: %s\n", strategy_names[strategy_index]);
+
+        // Execute higher-order function passing the current function pointer from table.
+        process_telemetry_stream(telemetry_data,
+                                 processed_data,
+                                 sample_count,
+                                 dispatch_table[strategy_index]);
+
+        // Print header for output results array.
+        printf("-> Output Results: [ ");
+
+        // Iterate through processed array and print each transformed value.
+        for (size_t index = 0; index &lt; sample_count; index++)
+        {
+            printf("%.2f ", processed_data[index]);
+        }
+
+        // Print closing bracket for array output.
+        printf("]\n\n");
+    }
+
+    // Return success exit status code.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">15.5 Comprehensive Systems Demonstration 2: Multi-Threaded Parallel Dataset Statistics Worker</h4>
+                <p>The second intricate demonstration is a practical systems utility that divides a large dataset partition across multiple concurrent POSIX threads, using function pointer callbacks to execute parallel statistical calculations (such as summation aggregation and peak value detection) with robust error checks:</p>
+
+                <!-- Second Intricate Example C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;pthread.h&gt;
+
+// Define a function pointer type for statistical metric computation callbacks.
+typedef double (*statistical_metric_callback_t)(const double* data, size_t count);
+
+static double compute_dataset_sum(const double *data, size_t count)
+{
+    // Check defensively if data pointer is null.
+    if (data == NULL)
+    {
+        return 0.0;
+    }
+
+    // Initialize running sum accumulator variable.
+    double running_sum = 0.0;
+
+    // Loop through each element in dataset array to accumulate sum.
+    for (size_t index = 0; index &lt; count; index++)
+    {
+        running_sum += data[index];
+    }
+
+    // Return the total accumulated summation value.
+    return running_sum;
+}
+
+static double compute_dataset_maximum(const double *data, size_t count)
+{
+    // Verify data pointer is valid and count is greater than zero.
+    if (data == NULL || count == 0)
+    {
+        return 0.0;
+    }
+
+    // Initialize peak maximum value with the first array element.
+    double peak_value = data[0];
+
+    // Iterate through remaining array elements to find maximum value.
+    for (size_t index = 1; index &lt; count; index++)
+    {
+        // Check if current element exceeds current peak value.
+        if (data[index] &gt; peak_value)
+        {
+            // Update peak value.
+            peak_value = data[index];
+        }
+    }
+
+    // Return discovered peak maximum value.
+    return peak_value;
+}
+
+// Define a composite thread payload structure for parallel analysis.
+typedef struct 
+{
+    int32_t id;
+    const double* partition;
+    size_t count;
+    double result;
+    statistical_metric_callback_t callback;
+} thread_analysis_payload_t;
+
+static void* parallel_analysis_worker_routine(void* argument)
+{
+    // Validate thread argument pointer defensively against null reference.
+    if (argument == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Parallel analysis worker received null argument pointer.\n");
+
+        return NULL;
+    }
+
+    // Cast generic void pointer back to concrete thread analysis payload structure type.
+    thread_analysis_payload_t* analysis_record = (thread_analysis_payload_t*)argument;
+
+    // Verify callback and partition pointer validity before execution.
+    if (analysis_record-&gt;callback != NULL &amp;&amp; analysis_record-&gt;partition != NULL)
+    {
+        // Execute assigned statistical metric callback function on partition data.
+        analysis_record-&gt;result = analysis_record-&gt;callback(
+            analysis_record-&gt;partition, 
+            analysis_record-&gt;count
+        );
+    }
+    else
+    {
+        // Set result to zero if callback or partition is invalid.
+        analysis_record-&gt;result = 0.0;
+    }
+
+    // Return null thread exit pointer.
+    return NULL;
+}
+
+int main(void)
+{
+    // Print startup banner message.
+    printf("=== Initializing Parallel Dataset Statistics Engine ===\n\n");
+
+    // Define constant for total elements in master dataset.
+    const size_t total_elements = 8;
+
+    // Initialize master dataset array with sample numerical values.
+    double master_dataset[8] = { 12.5, 45.2, 8.1, 99.4, 33.0, 77.1, 14.9, 52.8 };
+
+    // Calculate partition size for dividing dataset across threads.
+    size_t partition_size = total_elements / 2;
+
+    // Declare POSIX thread identifier variables.
+    pthread_t summation_thread_identifier;
+    pthread_t maximum_thread_identifier;
+
+    // Allocate heap memory for summation thread payload record.
+    thread_analysis_payload_t* summation_payload_record = (thread_analysis_payload_t*)malloc(sizeof(thread_analysis_payload_t));
+
+    // Defensively check heap allocation success for summation payload.
+    if (summation_payload_record == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Heap allocation failed for summation thread payload record.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // Populate summation thread payload record fields.
+    summation_payload_record-&gt;id = 1;
+    summation_payload_record-&gt;partition = &amp;master_dataset[0];
+    summation_payload_record-&gt;count = partition_size;
+    summation_payload_record-&gt;result = 0.0;
+    summation_payload_record-&gt;callback = compute_dataset_sum;
+
+    // Allocate heap memory for maximum thread payload record.
+    thread_analysis_payload_t* maximum_payload_record = (thread_analysis_payload_t*)malloc(sizeof(thread_analysis_payload_t));
+
+    // Defensively check heap allocation success for maximum payload.
+    if (maximum_payload_record == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Heap allocation failed for maximum thread payload record.\n");
+
+        // Free previously allocated summation payload memory before exiting.
+        free(summation_payload_record);
+
+        return EXIT_FAILURE;
+    }
+
+    // Populate maximum thread payload record fields.
+    maximum_payload_record-&gt;id = 2;
+    maximum_payload_record-&gt;partition = &amp;master_dataset[partition_size];
+    maximum_payload_record-&gt;count = partition_size;
+    maximum_payload_record-&gt;result = 0.0;
+    maximum_payload_record-&gt;callback = compute_dataset_maximum;
+
+    // Spawn concurrent POSIX threads for parallel analysis execution.
+    int32_t summation_spawn_status = pthread_create(&amp;summation_thread_identifier, NULL, parallel_analysis_worker_routine, (void *)summation_payload_record);
+    int32_t maximum_spawn_status = pthread_create(&amp;maximum_thread_identifier, NULL, parallel_analysis_worker_routine, (void *)maximum_payload_record);
+
+    // Defensively verify thread creation status codes.
+    if (summation_spawn_status != 0 || maximum_spawn_status != 0)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to spawn parallel data analysis threads.\n");
+
+        // Reclaim heap memory allocated for thread payloads.
+        free(summation_payload_record);
+        free(maximum_payload_record);
+
+        return EXIT_FAILURE;
+    }
+
+    // Print thread synchronization status message.
+    printf("Main thread waiting for parallel worker threads to complete analysis...\n\n");
+
+    // Synchronize worker threads using pthread_join.
+    pthread_join(summation_thread_identifier, NULL);
+    pthread_join(maximum_thread_identifier, NULL);
+
+    // Print computed parallel analysis results.
+    printf("Parallel Computation Results:\n");
+    printf("- Partition One Summation Result: %.2f\n", summation_payload_record-&gt;result);
+    printf("- Partition Two Maximum Result  : %.2f\n", maximum_payload_record-&gt;result);
+
+    // Reclaim heap memory allocated for payloads and nullify pointers.
+    free(summation_payload_record);
+
+    summation_payload_record = NULL;
+
+    free(maximum_payload_record);
+
+    maximum_payload_record = NULL;
+
+    // Print successful completion message.
+    printf("\nParallel dataset analysis completed successfully. Engine shut down.\n");
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">15.6 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Function pointers store exact executable memory addresses, enabling dynamic dispatch tables and runtime polymorphism.</li>
+                    <li class="mb-2">Higher-order functions accept function pointers as arguments, cleanly decoupling algorithms from specific callback logic.</li>
+                    <li class="mb-2">Use POSIX threads (<code>pthread_create</code> and <code>pthread_join</code>) to achieve true concurrent multi-threaded execution.</li>
+                    <li class="mb-2">Always allocate distinct payload records on the heap when spawning multiple concurrent threads to prevent data races and memory corruption.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_14.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Bitwise Operations
+                </a>
+                <a href="chapter_16.html" class="btn btn-primary btn-sm">
+                    Data Structures <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

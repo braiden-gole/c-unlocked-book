@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 6: Arrays, Strings & Memory Buffers - C Unlocked by Braiden Golle." />
+        <meta name="author" content="Braiden Golle" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, pointers, and memory management by Braiden Golle." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 6: Arrays &amp; Strings | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 6: Arrays, Strings &amp; Memory Buffers</h2>
+                <div class="lead mb-4">
+                    Arrays, strings, and contiguous memory buffers form the data backbone of C systems applications. Understanding physical RAM layout, avoiding pointer decay pitfalls, and enforcing strict bounds checking is essential for writing high-performance, secure systems code.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">6.1 Array Allocation, Contiguity &amp; Indexing Fundamentals</h4>
+                <p>An array in C is a fixed-size, contiguous sequence of memory locations holding elements of identical data types. Elements reside directly side-by-side in RAM without internal padding or header metadata, allowing traversal via index lookups or pointer arithmetic to execute with maximum hardware efficiency.</p>
+                <p>Declaring an array like <code>int32_t sensor_readings[5];</code> instructs the compiler to reserve a contiguous block of exactly 5 * sizeof(int32_t) bytes in memory. The following detailed systems demonstration illustrates multidimensional array layout, matrix initialization, row-major traversal, and defensive bounds verification:</p>
+
+                <!-- Multidimensional Array Matrix C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+int main(void)
+{
+    // Define row and column dimensions for a hardware sensor grid matrix.
+    const size_t matrix_rows = 3;
+    const size_t matrix_columns = 3;
+
+    // Allocate a contiguous 2D array representing a spatial sensor grid.
+    int32_t sensor_grid[3][3] = 
+    {
+        {10, 20, 30},
+        {40, 50, 60},
+        {70, 80, 90}
+    };
+
+    // Print header label for the grid scanner output.
+    printf("--- Scanning Hardware Sensor Grid Matrix ---\n");
+
+    // Traverse the 2D array using nested loops in row-major order.
+    for (size_t row_index = 0; row_index &lt; matrix_rows; row_index++)
+    {
+        for (size_t column_index = 0; column_index &lt; matrix_columns; column_index++)
+        {
+            // Access each grid element using standard subscript notation.
+            int32_t current_reading = sensor_grid[row_index][column_index];
+
+            // Print coordinate position and stored value.
+            printf("Grid Cell [%zu][%zu] -&gt; Value: %d\n", row_index, column_index, current_reading);
+        }
+    }
+
+    // Return success status code to the operating system environment.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">6.2 Pointer Decay &amp; Passing Arrays to Functions</h4>
+                <p>A critical trap for C developers involves <strong>pointer decay</strong>. Passing an array identifier into a function argument strips away compile-time size metadata, degrading the array into a raw pointer pointing to its first element (e.g., decaying from <code>int32_t[5]</code> to <code>int32_t*</code>).</p>
+                <p>The receiving function acquires only a raw memory address, meaning that calling <code>sizeof(array_parameter)</code> inside that function evaluates to the size of the pointer itself rather than the total size of the allocated buffer. Systems functions operating on arrays must therefore accept an explicit <code>size_t size</code> parameter to enforce strict safety bounds.</p>
+
+                <p>The following detailed systems demonstration illustrates safe array transmission, explicit bounds tracking, and defensive mutation across function boundaries:</p>
+
+                <!-- Pointer Decay & Function Passing C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Function prototype accepting an array pointer as argument 1 and explicit element count as argument 2.
+bool normalize_sensor_buffer(int32_t* const buffer, size_t size, int32_t scaling_multiplier);
+
+int main(void)
+{
+    // Allocate a local contiguous telemetry buffer.
+    int32_t telemetry_buffer[] = {100, 200, 300, 400, 500};
+    
+    // Calculate total elements in main() where array size is fully known.
+    size_t count = sizeof(telemetry_buffer) / sizeof(telemetry_buffer[0]);
+
+    // Define scaling multiplier constant.
+    const int32_t amplifier_gain = 2;
+
+    // Print initial unscaled buffer values.
+    printf("Original buffer values: ");
+
+    for (size_t index = 0; index &lt; count; index++)
+    {
+        printf("%d ", telemetry_buffer[index]);
+    }
+
+    printf("\n");
+
+    // Invoke normalization routine protecting against buffer overflows.
+    bool status = normalize_sensor_buffer(telemetry_buffer, count, amplifier_gain);
+
+    if (!status)
+    {
+        // Print descriptive error message to standard error stream.
+        fprintf(stderr, "Error: Buffer normalization failed due to null pointer or invalid bounds.\n");
+
+        // Terminate execution returning a standard failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Print successfully scaled buffer values.
+    printf("Normalized buffer values: ");
+
+    for (size_t index = 0; index &lt; count; index++)
+    {
+        printf("%d ", telemetry_buffer[index]);
+    }
+
+    printf("\n");
+
+    // Return success status code to the operating system.
+    return EXIT_SUCCESS;
+}
+
+bool normalize_sensor_buffer(int32_t* const buffer, size_t size, int32_t scaling_multiplier)
+{
+    // Validate pointer integrity and size bounds defensively.
+    if (buffer == NULL || size == 0)
+    {
+        return false;
+    }
+
+    // Iterate through the buffer safely using the explicit element count parameter.
+    for (size_t index = 0; index &lt; size; index++)
+    {
+        // Multiply each element value by the scaling factor.
+        buffer[index] *= scaling_multiplier;
+    }
+
+    // Return success status.
+    return true;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">6.3 Character Strings &amp; Null-Terminated Buffers</h4>
+                <p>Unlike higher-level programming languages that manage string objects with built-in length metadata, C strings consist of contiguous arrays of characters terminated explicitly by a null byte character (<code>'\0'</code>, ASCII value 0). Algorithms determine string length by scanning memory sequentially until locating this null terminator byte.</p>
+                <p>Standard library functions like <code>strcpy()</code> and <code>sprintf()</code> fail to verify destination buffer capacities, creating severe security vulnerabilities. Modern defensive C systems programming mandates the use of bounds-checked alternatives such as <code>snprintf()</code>.</p>
+                
+                <p>When formatting and printing strings or scalar values using functions like <code>printf()</code>, <code>fprintf()</code>, or <code>snprintf()</code>, C relies on specific <strong>format specifiers</strong> to interpret variable data types correctly across different architectures and bit widths. The comprehensive table below outlines all essential string, character, integer, long, floating-point, size, and pointer format specifiers used throughout systems programming:</p>
+
+                <!-- Comprehensive Format Specifiers Table -->
+                <div class="table-responsive my-4">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col">Format Specifier</th>
+                                <th scope="col">Corresponding Data Type</th>
+                                <th scope="col">Description &amp; Systems Usage Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>%s</code></td>
+                                <td><code>char*</code> (String)</td>
+                                <td>Prints a null-terminated character string. Example: <code>printf("%s", "Active");</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%c</code></td>
+                                <td><code>char</code></td>
+                                <td>Prints a single character. Example: <code>printf("%c", 'A');</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%d</code> or <code>%i</code></td>
+                                <td><code>int</code> (Signed standard integer)</td>
+                                <td>Prints signed decimal integers. Example: <code>printf("%d", -42);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%u</code></td>
+                                <td><code>unsigned int</code></td>
+                                <td>Prints unsigned decimal integers. Example: <code>printf("%u", 1024);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%ld</code></td>
+                                <td><code>long</code> (Signed long integer)</td>
+                                <td>Prints signed long integers. Example: <code>printf("%ld", file_offset);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%lu</code></td>
+                                <td><code>unsigned long</code></td>
+                                <td>Prints unsigned long integers. Example: <code>printf("%lu", total_bytes);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%lld</code></td>
+                                <td><code>long long</code> (Signed 64-bit integer)</td>
+                                <td>Prints signed long long integers. Example: <code>printf("%lld", epoch_timestamp);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%llu</code></td>
+                                <td><code>unsigned long long</code></td>
+                                <td>Prints unsigned long long integers. Example: <code>printf("%llu", memory_limit);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%zu</code></td>
+                                <td><code>size_t</code></td>
+                                <td>Prints memory sizes and array counts (corresponds to <code>sizeof</code>). Example: <code>printf("%zu", buffer_size);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%f</code></td>
+                                <td><code>float</code> / <code>double</code></td>
+                                <td>Prints floating-point numbers in standard decimal notation. Example: <code>printf("%.2f", 98.6f);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%lf</code></td>
+                                <td><code>double</code> (in <code>scanf</code> / optional in <code>printf</code>)</td>
+                                <td>Scans or prints double-precision floats. Example: <code>scanf("%lf", &amp;precise_value);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%x</code> or <code>%X</code></td>
+                                <td>Unsigned integer types</td>
+                                <td>Prints hexadecimal integers (lowercase <code>%x</code> or uppercase <code>%X</code>). Example: <code>printf("0x%08X", device_id);</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>%p</code></td>
+                                <td><code>void*</code> (Pointer)</td>
+                                <td>Prints raw memory addresses in hexadecimal format. Example: <code>printf("%p", (void*)&amp;variable);</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>The following comprehensive systems demonstration illustrates safe string manipulation, bounds checking, explicit null-termination enforcement, and custom token parsing across mutable character buffers:</p>
+
+                <!-- Advanced String Token Parser C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;string.h&gt;
+
+// Function prototype for parsing a delimited key-value string safely.
+bool parse_delimited_string(char* const buffer, size_t buffer_size, 
+                            char* const key_output, size_t key_output_size, 
+                            uint32_t* const output);
+
+int main(void)
+{
+    // Allocate a mutable character buffer storing raw key-value data.
+    char stream[64] = "device_node_alpha:115200";
+
+    char extracted_key[32] = {0};
+
+    uint32_t parsed_value = 0;
+
+    // Parse the delimited string defensively.
+    bool status = parse_delimited_string(
+        stream, 
+        sizeof(stream), 
+        extracted_key, 
+        sizeof(extracted_key), 
+        &amp;parsed_value
+    );
+
+    // Check the parsed status.
+    if (!status)
+    {
+        fprintf(stderr, "Error: Failed to parse delimited string.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // Summary.
+    printf("--- Successfully Parsed Key-Value String ---\n");
+    printf("- Extracted Key   : %s\n", extracted_key);
+    printf("- Parsed Value    : %u\n", parsed_value);
+
+    return EXIT_SUCCESS;
+}
+
+bool parse_delimited_string(char* const buffer, size_t buffer_size, 
+                            char* const key_output, size_t key_output_size, 
+                            uint32_t* const output)
+{
+    // Validate pointer arguments and buffer capacity defensively.
+    if (buffer == NULL || key_output == NULL || output == NULL || buffer_size == 0)
+    {
+        return false;
+    }
+
+    // Search for the delimiter colon character (':') within the mutable string buffer.
+    char* delimiter = strchr(buffer, ':');
+
+    if (delimiter == NULL)
+    {
+        fprintf(stderr, "Error: Missing expected delimiter colon in string.\n");
+
+        return false;
+    }
+
+    // Temporarily replace the colon with a null terminator to isolate the key substring.
+    *delimiter = '\0';
+
+    // Copy the key portion safely into the destination storage buffer with bounds checking.
+    int print_status = snprintf(key_output, key_output_size, "%s", buffer);
+
+    if (print_status &lt; 0 || (size_t)print_status &gt;= key_output_size)
+    {
+        fprintf(stderr, "Error: Key storage buffer capacity exceeded during copy.\n");
+
+        return false;
+    }
+
+    // Advance past the null terminator to point directly to the numeric value string portion.
+    char* value = delimiter + 1;
+
+    // Convert the numeric string representation into an integer using standard library functions.
+    char* conversion_end = NULL;
+
+    long converted_numeric_value = strtol(value, &amp;conversion_end, 10);
+
+    // Verify that conversion succeeded and consumed characters.
+    if (value == conversion_end || converted_numeric_value &lt;= 0)
+    {
+        fprintf(stderr, "Error: Invalid numeric value format encountered in string.\n");
+
+        return false;
+    }
+
+    *output = (uint32_t)converted_numeric_value;
+
+    return true;
+}</code></pre>
+
+                <p class="mt-4">Additionally, systems software frequently requires combining path strings or directory identifiers securely. The following example demonstrates safe path joining using bounds-checked formatting to prevent buffer overflows:</p>
+
+                <!-- Safe Path Joining C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Function prototype for safely joining directory path and filename.
+bool join_file_path(char* const destination, size_t capacity, 
+                    const char* const directory_path, const char* const filename);
+
+int main(void)
+{
+    // Allocate a character buffer to store the constructed file path.
+    char complete_file_path[128] = {0};
+
+    // Determine the total capacity in bytes of the destination buffer.
+    size_t capacity = sizeof(complete_file_path);
+
+    // Define constant base directory and target filename string literals.
+    const char* const directory = "/var/log/telemetry";
+    const char* const filename = "device_status.log";
+
+    // Join path safely using bounds checking and validation.
+    bool status = join_file_path(complete_file_path, capacity, directory, filename);
+
+    // Verify that path joining executed successfully without errors.
+    if (!status)
+    {
+        fprintf(stderr, "Error: Failed to construct file path securely.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // Output the successfully constructed absolute file path.
+    printf("Successfully constructed file path: %s\n", complete_file_path);
+
+    return EXIT_SUCCESS;
+}
+
+bool join_file_path(char* const destination, size_t capacity, 
+                    const char* const directory_path, const char* const filename)
+{
+    // Validate pointer arguments and buffer capacity defensively.
+    if (destination == NULL || directory_path == NULL || filename == NULL || capacity == 0)
+    {
+        return false;
+    }
+
+    // Format and combine path strings safely with bounds checking.
+    int character_count = snprintf(destination, capacity, "%s/%s", directory_path, filename);
+
+    // Verify that snprintf completed successfully without truncation.
+    if (character_count &lt; 0 || (size_t)character_count &gt;= capacity)
+    {
+        // Ensure null-termination even if truncation occurred.
+        destination[capacity - 1] = '\0';
+
+        return false;
+    }
+
+    return true;
+}</code></pre>
+
+                <p class="mt-4">Furthermore, network packet headers often require formatting telemetry strings containing multi-precision integer metrics, signed file offsets, and 64-bit epoch timestamps. The following example demonstrates formatting complex telemetry reports using format specifiers like <code>ld</code> and <code>lld</code>:</p>
+
+                <!-- Telemetry Report Formatting C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;string.h&gt;
+
+// Function prototype for formatting long telemetry reports securely.
+bool format_telemetry_report(char* const destination, size_t capacity,
+                             const char* const station_code, long byte_offset, long long epoch_timestamp);
+
+int main(void)
+{
+    // Allocate a local character buffer to hold the formatted telemetry report.
+    char report_buffer[256] = {0};
+
+    // Determine the total buffer capacity in bytes.
+    size_t capacity = sizeof(report_buffer);
+
+    // Define station identification and mock long/long-long telemetry values.
+    const char* const active_station = "AlphaOutpost";
+
+    long byte_offset = 1048576L;
+    long long telemetry_epoch = 1773955200LL;
+
+    // Invoke formatting function with explicit parameters.
+    bool status = format_telemetry_report(report_buffer, capacity, active_station, byte_offset, telemetry_epoch);
+
+    // Check formatting execution status defensively.
+    if (!status)
+    {
+        fprintf(stderr, "Error: Telemetry report formatting failed or was truncated.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // Print the successfully generated telemetry report string.
+    printf("Generated Telemetry Report: %s\n", report_buffer);
+
+    return EXIT_SUCCESS;
+}
+
+bool format_telemetry_report(char* const destination, size_t capacity,
+                             const char* const station_code, long byte_offset, long long epoch_timestamp)
+{
+    // Validate pointer arguments and buffer capacity defensively.
+    if (destination == NULL || station_code == NULL || capacity == 0)
+    {
+        return false;
+    }
+
+    // Format strings using %ld for long offsets and %lld for 64-bit epoch timestamps.
+    int character_count = snprintf(destination, capacity,
+                                   "Station: [%s] | Offset: %ld bytes | Epoch: %lld",
+                                   station_code, byte_offset, epoch_timestamp);
+
+    // Verify output length and prevent buffer truncation issues.
+    if (character_count &lt; 0 || (size_t)character_count &gt;= capacity)
+    {
+        destination[capacity - 1] = '\0';
+
+        return false;
+    }
+
+    return true;
+}</code></pre>
+
+                <p class="mt-4">In addition to formatting reports, systems monitoring tools frequently analyze command strings or status flags received from microcontrollers. The following example demonstrates parsing a hardware command string and extracting integer operating flags securely:</p>
+
+                <!-- Hardware Command Parser C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;string.h&gt;
+
+// Function prototype for parsing hardware command status strings.
+bool parse_hardware_command(const char* const command, uint32_t* const id, int32_t* const power_level);
+
+int main(void)
+{
+    // Define a raw command string received from hardware interfaces.
+    const char* const raw_command = "CMD_SET_POWER:4096:-85";
+
+    // Initialize local variables to store parsed command parameters.
+    uint32_t identifier = 0;
+
+    int32_t power = 0;
+
+    // Parse the hardware command string defensively.
+    bool status = parse_hardware_command(raw_command, &amp;identifier, &amp;power);
+
+    // Verify parsing success.
+    if (!status)
+    {
+        fprintf(stderr, "Error: Failed to parse hardware command string.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // Output successfully parsed command components.
+    printf("Parsed Hardware Command -> ID: %u | Power Level: %d\n", identifier, power);
+
+    return EXIT_SUCCESS;
+}
+
+bool parse_hardware_command(const char* const command, uint32_t* const id, int32_t* const power_level)
+{
+    // Validate pointer arguments defensively.
+    if (command == NULL || id == NULL || power_level == NULL)
+    {
+        return false;
+    }
+
+    // Allocate temporary local variables for safe scanning.
+    unsigned int parsed_id = 0;
+
+    int parsed_power = 0;
+
+    // Scan formatted string parameters safely.
+    int matched_items = sscanf(command, "CMD_SET_POWER:%u:%d", &amp;parsed_id, &amp;parsed_power);
+
+    // Ensure all expected conversion tokens were successfully matched.
+    if (matched_items != 2)
+    {
+        return false;
+    }
+
+    // Assign parsed values to output pointers securely.
+    *id = (uint32_t)parsed_id;
+    *power_level = (int32_t)parsed_power;
+
+    return true;
+}</code></pre>
+
+                <p class="mt-4">Finally, security audit logging in multi-threaded applications requires embedding process identifiers and memory allocation footprints into structured error messages. The following example illustrates formatting system audit logs utilizing <code>%lu</code> for counts and <code>%p</code> for memory addresses:</p>
+
+                <!-- Security Audit Logger C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;string.h&gt;
+
+// Function prototype for generating security audit log entries.
+bool generate_audit_entry(char* const logger, size_t capacity, unsigned long number_of_allocations, const void* const memory_address);
+
+int main(void)
+{
+    // Allocate a character buffer for storing the generated audit log entry.
+    char audit_log[192] = {0};
+
+    // Determine the total capacity in bytes of the log buffer.
+    size_t capacity = sizeof(audit_log);
+
+    // Define mock metrics representing allocation counts and memory pointers.
+    unsigned long allocation_count = 1048576UL;
+
+    int32_t mock_resource = 42;
+
+    // Generate security audit log entry safely.
+    bool status = generate_audit_entry(audit_log, capacity, allocation_count, (const void*)&amp;mock_resource);
+
+    // Verify audit log generation success.
+    if (!status)
+    {
+        fprintf(stderr, "Error: Audit log generation failed.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // Output the successfully formatted security audit entry.
+    printf("Audit Entry Generated: %s\n", audit_log);
+
+    return EXIT_SUCCESS;
+}
+
+bool generate_audit_entry(char* const logger, size_t capacity, unsigned long number_of_allocations, const void* const memory_address)
+{
+    // Validate pointer arguments and buffer capacity defensively.
+    if (logger == NULL || memory_address == NULL || capacity == 0)
+    {
+        return false;
+    }
+
+    // Embed unsigned long counts (%lu) and pointer addresses (%p) securely into the log.
+    int written_bytes = snprintf(logger, capacity, 
+                                 "SECURITY_AUDIT: Allocations Count: %lu | Base Address: %p", 
+                                 number_of_allocations, memory_address);
+
+    // Verify that writing completed successfully without buffer truncation.
+    if (written_bytes &lt; 0 || (size_t)written_bytes &gt;= capacity)
+    {
+        logger[capacity - 1] = '\0';
+
+        return false;
+    }
+
+    return true;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">6.4 Safe String Formatting &amp; Buffer Management Demonstration</h4>
+                <p>The following detailed systems demonstration illustrates safe string formatting, explicit bounds checking, null-termination enforcement, and defensive error handling using <code>snprintf</code>:</p>
+
+                <!-- Safe String Buffer C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;string.h&gt;
+
+// Function prototype enforcing strict buffer capacity bounds.
+bool format_telemetry_log_message(char* const destination, size_t capacity, const char* const subsystem_name, uint32_t error_code);
+
+int main(void)
+{
+    // Allocate a fixed-size destination character buffer.
+    char telemetry_log_buffer[128];
+
+    // Determine total buffer capacity in bytes.
+    size_t capacity = sizeof(telemetry_log_buffer);
+
+    // Initialize constant subsystem name string literal pointer.
+    const char* const active_subsystem = "RadioTelemetryModule";
+
+    // Define mock error code constant.
+    uint32_t error_code = 0xDEAD0001;
+
+    // Format the log message safely into the destination buffer.
+    bool status = format_telemetry_log_message(telemetry_log_buffer, capacity, active_subsystem, error_code);
+
+    if (!status)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Telemetry log formatting failed or buffer truncated.\n");
+
+        // Return failure status code to the operating system.
+        return EXIT_FAILURE;
+    }
+
+    // Output the successfully formatted log message.
+    printf("Generated Log Message: %s\n", telemetry_log_buffer);
+
+    // Return success status code to the operating system.
+    return EXIT_SUCCESS;
+}
+
+bool format_telemetry_log_message(char* const destination, size_t capacity, const char* const subsystem_name, uint32_t error_code)
+{
+    // Validate pointer integrity and buffer capacity defensively.
+    if (destination == NULL || subsystem_name == NULL || capacity == 0)
+    {
+        return false;
+    }
+
+    // Perform bounds-checked string formatting using snprintf to prevent buffer overflows.
+    int count = snprintf(destination, capacity, "Subsystem [%s] reported fatal error code: 0x%08X", subsystem_name, error_code);
+
+    // Verify that snprintf succeeded and that the output was not truncated.
+    if (count &lt; 0 || (size_t)count &gt;= capacity)
+    {
+        // Ensure the buffer is null-terminated even if truncation occurred.
+        destination[capacity - 1] = '\0';
+
+        return false;
+    }
+
+    // Return success status.
+    return true;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">6.5 Advanced Raw Buffer Byte Manipulation &amp; Memory Copying</h4>
+                <p>Systems software frequently requires raw byte manipulation when parsing network protocol packets, serializing binary structures, or moving raw memory chunks between device registers. Developers accomplish this safely using memory utility routines like <code>memcpy()</code> combined with strict boundary validation.</p>
+                <p>The following detailed systems demonstration illustrates safe raw byte buffer slicing, copying, and validation:</p>
+
+                <!-- Raw Buffer Byte Manipulation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;string.h&gt;
+
+// Function prototype for slicing a raw byte stream buffer.
+bool extract_packet_payload(const uint8_t* const source, size_t source_size, 
+                            uint8_t* const destination, size_t destination_size, 
+                            size_t payload_offset, size_t payload_length);
+
+int main(void)
+{
+    // Initialize a raw source byte stream buffer.
+    uint8_t data[64] = 
+    {
+        0xAA, 0xBB, 0xCC, 0xDD,
+        0x01, 0x02, 0x03, 0x04,
+        0x05, 0x06, 0x07, 0x08
+    };
+
+    size_t size = sizeof(data);
+
+    // Allocate a destination buffer to hold the sliced data segment.
+    uint8_t destination_data[8];
+    size_t destination_capacity = sizeof(destination_data);
+
+    // Define byte offset and transfer length parameters.
+    size_t byte_offset = 4;
+    size_t byte_count = 8;
+
+    // Extract the buffer slice safely using bounds-checked memory copying.
+    bool status = extract_packet_payload(data, size, destination_data, destination_capacity, byte_offset, byte_count);
+
+    if (!status)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Buffer slice extraction failed due to bounds overflow or null pointers.\n");
+
+        // Terminate program execution returning a standard failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Print confirmation and display extracted bytes in hexadecimal format.
+    printf("Successfully extracted buffer bytes: ");
+
+    for (size_t index = 0; index &lt; byte_count; index++)
+    {
+        printf("0x%02X ", destination_data[index]);
+    }
+
+    printf("\n");
+
+    // Return success status code to operating system environment.
+    return EXIT_SUCCESS;
+}
+
+bool extract_packet_payload(const uint8_t* const source, size_t source_size, 
+                          uint8_t* const destination, size_t destination_size, 
+                          size_t payload_offset, size_t payload_length)
+{
+    // Validate pointer integrity defensively.
+    if (source == NULL || destination == NULL)
+    {
+        return false;
+    }
+
+    // Verify that the requested extraction range does not exceed source buffer boundaries.
+    if ((payload_offset + payload_length) &gt; source_size)
+    {
+        return false;
+    }
+
+    // Verify that the destination buffer has sufficient capacity to hold the data.
+    if (payload_length &gt; destination_size)
+    {
+        return false;
+    }
+
+    // Perform secure, bounds-checked memory copying from source offset to destination.
+    memcpy(destination, source + payload_offset, payload_length);
+
+    // Return success status.
+    return true;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">6.6 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Arrays decay to pointers when passed to functions; always pass an explicit <code>size_t count</code> parameter alongside array pointers.</li>
+                    <li class="mb-2">Character buffers allocated for strings must reserve space for the mandatory null terminator (<code>'\0'</code>).</li>
+                    <li class="mb-2">Unsafe legacy string functions like <code>strcpy</code> and <code>sprintf</code> create critical security vulnerabilities; always use bounds-checked alternatives like <code>snprintf</code>.</li>
+                    <li class="mb-2">Buffer capacity and pointer parameters must be validated defensively against <code>NULL</code> and boundary overflows before performing write operations.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_05.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Pointers &amp; Memory
+                </a>
+                <a href="chapter_07.html" class="btn btn-primary btn-sm">
+                    Dynamic Memory Allocation <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

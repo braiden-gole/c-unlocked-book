@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="google-site-verification" content="gSmkvvqMiaJTaz9yyplx1rLh1oq0xYuaoLw1D1LukHU">
+        <meta name="description" content="A clear, modern, and practical guide to unlocking C programming, pointers, and memory management by Braiden Gole.">
+        <meta name="author" content="Braiden Gole">
+        <meta name="robots" content="index, follow">
+
+        <meta property="og:site_name" content="C Unlocked">
+        <meta property="og:locale" content="en_US">
+        <meta property="og:title" content="C Unlocked | Braiden Gole">
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, pointers, and memory management by Braiden Gole.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/">
+        <meta property="og:image" content="https://braiden-gole.github.io/c-unlocked-book/images/square.png">
+
+        <title>C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="images/square.png">
+
+        <link rel="canonical" href="https://braiden-gole.github.io/c-unlocked-book/">
+
+        <link rel="me" href="https://github.com/braiden-gole">
+
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Book",
+            "@id": "https://braiden-gole.github.io/c-unlocked-book/#book",
+            "name": "C Unlocked",
+            "headline": "C Unlocked: Mastering Pointers, Memory Architecture, and Low-Level Systems Programming",
+            "url": "https://braiden-gole.github.io/c-unlocked-book/",
+            "description": "A crystal-clear, code-first guide to mastering C programming, pointer mechanics, manual memory management, and systems fundamentals.",
+            "image": "https://braiden-gole.github.io/c-unlocked-book/images/square.png",
+            "inLanguage": "en",
+            "about": [
+                "C programming language",
+                "Pointers and memory management",
+                "Systems programming"
+            ],
+            "author": {
+                "@type": "Person",
+                "@id": "https://braiden-gole.github.io/#person",
+                "name": "Braiden Gole",
+                "jobTitle": "Computer Programmer",
+                "url": "https://braiden-gole.github.io/",
+                "sameAs": ["https://github.com/braiden-gole"]
+            }
+        }
+        </script>
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-MKn5NWVBEuQXJE7TSKSgPUmMiSCmVTfCsR+VSSeQpHnoyJQZZFn/kBn+Ht5jZDPQ" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <link rel="stylesheet" href="main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <header class="book-header py-5 text-center">
+            <div class="container">
+                <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
+                    <img src="svgs/c.svg" width="55" height="55" alt="C Logo" class="book-logo">
+                    <h1 class="display-4 fw-bold mb-0 tracking-tight"><span class="visually-hidden">C </span>Unlocked</h1>
+                </div>
+                <p class="book-subtitle lead mx-auto mt-2">Mastering Pointers, Memory Architecture, and Low-Level Systems Programming</p>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <main class="container my-5 content-container">
+            <div class="author-card p-4 mb-5 rounded-3 text-center">
+                <p class="mb-2"><strong>Written by</strong> Braiden Gole</p>
+                <div class="d-flex flex-wrap justify-content-center align-items-center gap-4 small">
+                    <span><i class="bi bi-envelope-fill me-1 text-primary"></i>
+                        <a href="mailto:braiden.gole@gmail.com" class="text-decoration-none author-link">braiden.gole@gmail.com</a>
+                    </span>
+                    <span><i class="bi bi-globe me-1 text-primary"></i>
+                        <a href="https://braiden-gole.github.io/" class="text-decoration-none author-link">braiden-gole.github.io</a>
+                    </span>
+                    <span><i class="bi bi-github me-1 text-primary"></i>
+                        <a href="https://github.com/braiden-gole" class="text-decoration-none author-link">braiden-gole</a>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Part I: Foundations & Core Syntax -->
+            <div class="part-section mb-5">
+                <h2 class="h4 part-title pb-2 mb-3">Part I: Foundations &amp; Core Syntax</h2>
+                <div class="list-group shadow-sm chapter-group">
+                    <a href="components/chapter_01.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 1: The C Environment &amp; Compilation Pipeline</h3>
+                            <p class="mb-0 small chapter-desc">Preprocessing, compilation to assembly, assembling to object code, and linking into an executable binary using GCC/Clang.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_02.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 2: Primitive Types, Variables &amp; Memory Representation</h3>
+                            <p class="mb-0 small chapter-desc">Exact-width integers (<code>stdint.h</code>), IEEE 754 floating points, signed vs. unsigned arithmetic, endianness, and memory layout.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_03.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 3: Operators, Expressions &amp; Control Flow</h3>
+                            <p class="mb-0 small chapter-desc">Precedence traps, short-circuit evaluation, branching (<code>if</code>, <code>switch</code>), loops, and writing predictable, branch-friendly logic.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_04.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 4: Functions, Scope &amp; The Call Stack</h3>
+                            <p class="mb-0 small chapter-desc">Stack frames, pass-by-value semantics, storage classes (<code>static</code>, <code>extern</code>), recursion limits, and how the CPU tracks execution flow.</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Part II: Memory, Pointers & Data Layout -->
+            <div class="part-section mb-5">
+                <h2 class="h4 part-title pb-2 mb-3">Part II: Memory, Pointers &amp; Data Layout</h2>
+                <div class="list-group shadow-sm chapter-group">
+                    <a href="components/chapter_05.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 5: Pointers Demystified</h3>
+                            <p class="mb-0 small chapter-desc">Memory addresses, dereferencing (<code>*</code> and <code>&amp;</code>), pointer arithmetic, <code>void *</code>, <code>const</code> correctness, and eliminating null-pointer crashes.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_06.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 6: Arrays, Strings &amp; Buffer Safety</h3>
+                            <p class="mb-0 small chapter-desc">Pointer decay, contiguous memory layouts, null-terminated C strings, and replacing unsafe legacy functions (<code>strcpy</code>) with bounded alternatives (<code>snprintf</code>).</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_07.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 7: Dynamic Memory Allocation &amp; Heap Management</h3>
+                            <p class="mb-0 small chapter-desc">Escaping stack boundaries with <code>malloc</code>, <code>calloc</code>, <code>realloc</code>, and <code>free</code>; preventing memory leaks, double-frees, and dangling pointers.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_08.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 8: Structs, Unions &amp; Memory Alignment</h3>
+                            <p class="mb-0 small chapter-desc">Composite data types, struct padding, cache-line alignment, bit-fields, and overlapping memory spaces with unions.</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Part III: Modularity, I/O & Tooling -->
+            <div class="part-section mb-5">
+                <h2 class="h4 part-title pb-2 mb-3">Part III: Modularity, I/O &amp; Tooling</h2>
+                <div class="list-group shadow-sm chapter-group">
+                    <a href="components/chapter_09.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 9: File I/O &amp; Stream Processing</h3>
+                            <p class="mb-0 small chapter-desc">Buffered streams (<code>FILE *</code>), binary vs. text mode, random file access (<code>fseek</code>, <code>ftell</code>), standard streams, and <code>errno</code> error handling.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_10.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 10: The Preprocessor &amp; Macro Metaprogramming</h3>
+                            <p class="mb-0 small chapter-desc"><code>#define</code>, conditional compilation (<code>#ifdef</code>), header guards, variadic macros, and avoiding macro side-effect bugs.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_11.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 11: Multi-File Architecture &amp; Build Systems</h3>
+                            <p class="mb-0 small chapter-desc">Separating interfaces (<code>.h</code>) from implementations (<code>.c</code>), managing translation units, static/shared libraries (<code>.a</code>, <code>.so</code>), and Makefiles.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_12.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 12: Debugging &amp; Memory Sanitizers</h3>
+                            <p class="mb-0 small chapter-desc">Inspecting live state with GDB/LLDB, hunting leaks with Valgrind, and catching undefined behavior with AddressSanitizer (ASan) and UBSan.</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Part IV: Advanced Systems & C/C++ Interoperability -->
+            <div class="part-section mb-5">
+                <h2 class="h4 part-title pb-2 mb-3">Part IV: Advanced Systems &amp; C/C++ Interoperability</h2>
+                <div class="list-group shadow-sm chapter-group">
+                    <a href="components/chapter_13.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 13: Error Handling &amp; Assertions</h3>
+                            <p class="mb-0 small chapter-desc">Explicit status return codes, custom enums, system error propagation via <code>errno</code>, and runtime invariant validation with <code>&lt;assert.h&gt;</code>.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_14.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 14: Bitwise Operations &amp; Low-Level Optimization</h3>
+                            <p class="mb-0 small chapter-desc">Bitwise operators (<code>&amp;</code>, <code>|</code>, <code>^</code>, <code>~</code>, <code>&lt;&lt;</code>, <code>&gt;&gt;</code>), bitmasks, hardware register flags, and branchless programming tricks.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_15.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 15: Function Pointers, Callbacks &amp; Concurrency</h3>
+                            <p class="mb-0 small chapter-desc">Dynamic dispatch tables, generic algorithms (<code>qsort</code> patterns), and multi-threaded programming using POSIX threads (<code>pthreads</code>) and atomics.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_16.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 16: Data Structures from Scratch</h3>
+                            <p class="mb-0 small chapter-desc">Implementing self-referential structs, intrusive linked lists, dynamic arrays, ring buffers, and hash tables with manual memory ownership.</p>
+                        </div>
+                    </a>
+                    <a href="components/chapter_17.html" class="list-group-item list-group-item-action p-3 d-flex align-items-center gap-3 text-decoration-none">
+                        <img src="svgs/c.svg" width="36" height="36" alt="C" class="flex-shrink-0">
+                        <div>
+                            <h3 class="h5 mb-1 fw-bold chapter-title">Chapter 17: C &amp; C++ Interoperability: Bridging Both Worlds</h3>
+                            <p class="mb-0 small chapter-desc">Integrating C libraries into C++ using <code>extern "C"</code>, preventing name mangling, managing ABI boundaries, and wrapping raw C pointers in RAII classes.</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-+PW0IDVGGwmpaBQvcXY+W0BcpHpITFB3dSfSoGvDdHtLbrLpSbpGcvtQRM/BJpz+" crossorigin="anonymous"></script>
+        <script src="script.js"></script>
+    </body>
+</html>

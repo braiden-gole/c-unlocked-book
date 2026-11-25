@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 1: The C Environment & Compilation Pipeline - C Unlocked by Braiden Gole." />
+        <meta name="author" content="Braiden Gole" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, pointers, and memory management by Braiden Gole." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 1: The C Environment &amp; Compilation Pipeline | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 1: The C Environment &amp; Compilation Pipeline</h2>
+                <div class="lead mb-4">
+                    Before writing high-performance systems software, you must set up a professional toolchain across your operating system and master how C source code transforms into execution binaries.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">1.1 Setting Up Your Development Environment</h4>
+                <p>Because C requires direct interaction with system-level instruction sets, your machine needs a native toolchain consisting of a compiler (GCC or Clang), a linker, and standard header libraries (like <code>&lt;stdio.h&gt;</code>).</p>
+                
+                <!-- Windows Setup Card -->
+                <div class="card mb-4 border shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-primary mb-2"><i class="bi bi-windows me-2"></i>Windows: Setting up MinGW-w64 via MSYS2</h5>
+                        <p class="small mb-2">Windows lacks a built-in POSIX/C compilation environment. MSYS2 provides a modern, robust GNU toolchain for Windows development:</p>
+                        <ol class="small mb-2">
+                            <li>Go to <a href="https://www.msys2.org/" target="_blank" class="text-decoration-none">msys2.org</a>, download the installer, and run through the default setup steps.</li>
+                            <li>Launch the <strong>MSYS2 UCRT64</strong> terminal application from your start menu.</li>
+                            <li>Update the package database and core system libraries by running:<br>
+                            <code>pacman -Syu</code></li>
+                            <li>Close and reopen the terminal if prompted, then install the complete GCC toolchain and debugging utilities:<br>
+                            <code>pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain gdb</code></li>
+                            <li>Permanently append the binary directory path to your Windows Environment Variables (System Properties &gt; Environment Variables &gt; Path):<br>
+                            <code>C:\msys64\ucrt64\bin</code></li>
+                            <li>Open a fresh command prompt (CMD or PowerShell) to verify your installation:<br>
+                            <code>gcc --version</code></li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- macOS Setup Card -->
+                <div class="card mb-4 border shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-primary mb-2"><i class="bi bi-apple me-2"></i>macOS: Xcode Command Line Tools &amp; Homebrew</h5>
+                        <p class="small mb-2">macOS ships with Clang (fully compatible with standard GCC compilation commands) through Apple’s developer ecosystem:</p>
+                        <ol class="small mb-2">
+                            <li>Open your terminal application (Terminal or iTerm2).</li>
+                            <li>Execute the automatic installation command for command-line tools:<br>
+                            <code>xcode-select --install</code></li>
+                            <li>A graphical prompt will pop up. Click <strong>Install</strong> and agree to the license terms to download the necessary toolsets.</li>
+                            <li><em>Optional (Recommended):</em> If you prefer managing package updates via Homebrew, install GNU GCC alongside Clang by running:<br>
+                            <code>brew install gcc</code></li>
+                            <li>Verify your compiler setup in the terminal:<br>
+                            <code>clang --version</code> (or <code>gcc --version</code> if using Homebrew)</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Linux Setup Card -->
+                <div class="card mb-4 border shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-primary mb-2"><i class="bi bi-ubuntu me-2"></i>Linux: GNU Toolchain (Ubuntu, Fedora, Arch)</h5>
+                        <p class="small mb-2">Most Linux distributions include package managers that make setting up GCC straightforward:</p>
+                        <ul class="small mb-2">
+                            <li><strong>Ubuntu / Debian / Linux Mint:</strong><br>
+                            <code>sudo apt update && sudo apt install build-essential gdb</code></li>
+                            <li><strong>Fedora / RHEL / CentOS:</strong><br>
+                            <code>sudo dnf groupinstall "Development Tools" && sudo dnf install gdb</code></li>
+                            <li><strong>Arch Linux / Manjaro:</strong><br>
+                            <code>sudo pacman -S base-devel gdb</code></li>
+                        </ul>
+                        <p class="small mb-0">Verify your installation in the terminal:<br>
+                        <code>gcc --version</code></p>
+                    </div>
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">1.2 The Four Stages of Compilation Translation</h4>
+                <p>When you trigger a command like <code>gcc main.c</code>, the compiler does not blindly output an executable. It coordinates four separate automated sub-programs:</p>
+                
+                <ul class="mb-4">
+                    <li class="mb-2"><strong>1. Preprocessing (<span class="font-monospace">.i</span>):</strong> Strips comments, expands preprocessor directives (e.g., swapping <code>#include &lt;stdio.h&gt;</code> with actual header declarations), and replaces constants defined with <code>#define</code>.</li>
+                    <li class="mb-2"><strong>2. Compilation (<span class="font-monospace">.s</span>):</strong> Parses the preprocessed code for syntax errors and generates human-readable assembly instructions specific to your target CPU architecture.</li>
+                    <li class="mb-2"><strong>3. Assembling (<span class="font-monospace">.o</span>):</strong> Translates the assembly file into binary machine code (object file format), containing raw instructions the CPU can execute alongside unresolved reference placeholders.</li>
+                    <li class="mb-2"><strong>4. Linking (<span class="font-monospace">executable</span>):</strong> Resolves all external function references (like tying calls to <code>printf</code> to the compiled C standard library binaries) and generates your final executable file.</li>
+                </ul>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">1.3 Building Your First Binary via CLI</h4>
+                <p>Create a file named <code>main.c</code> and paste the following baseline program. This program includes explicit defensive checks to ensure the standard library input-output stream operates correctly.</p>
+
+                <!-- Highlighted C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main(void)
+{
+    // Print a confirmation message to standard output.
+    int print_status = printf("C Unlocked: Development environment successfully configured.\n");
+    
+    // Ensure the output operation completed without error.
+    if (print_status &lt; 0)
+    {
+        fprintf(stderr, "Error: Failed to write to standard output stream.\n");
+        
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <p>Always build your C applications using explicit flags to enforce safety bounds and standards compliance:</p>
+                
+                <!-- Highlighted Bash/CLI Code Block -->
+                <pre class="rounded border font-monospace small overflow-hidden"><code class="language-bash p-3"># Using GCC on Windows (MSYS2) or Linux
+gcc -Wall -Wextra -Werror -std=c11 main.c -o program
+
+# Using Clang on macOS or Linux
+clang -Wall -Wextra -Werror -std=c11 main.c -o program</code></pre>
+                
+                <p class="small text-muted mb-4">
+                    <em>Flag Breakdown:</em> <code>-Wall</code> and <code>-Wextra</code> turn on comprehensive warnings; <code>-Werror</code> treats any warning as a compilation failure to keep code bulletproof; <code>-std=c11</code> enforces modern C standard conventions; <code>-o program</code> names your compiled output file.
+                </p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">1.4 Summary Checklist</h4>
+                <p>Before advancing to variable representations and memory models in Chapter 2, verify that your development workspace satisfies all of the following checkpoints:</p>
+                
+                <ul class="mb-4">
+                    <li class="mb-2"><strong>Compiler Path Accessibility:</strong> Running <code>gcc --version</code> or <code>clang --version</code> successfully outputs your toolchain version without command-not-found errors.</li>
+                    <li class="mb-2"><strong>Strict Warning Discipline:</strong> All test projects compile cleanly under explicit flags (<code>-Wall -Wextra -Werror</code>) without letting unhandled warnings slide.</li>
+                    <li class="mb-2"><strong>Standard Compliance:</strong> Code builds target modern conventions by explicitly passing standards flags like <code>-std=c11</code> (or <code>-std=c23</code>).</li>
+                    <li class="mb-2"><strong>Executable Execution:</strong> You successfully compiled <code>main.c</code> into an output binary and executed it locally (e.g., running <code>./program</code> on Unix/macOS or `.\program.exe` on Windows).</li>
+                </ul>
+
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="../index.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Table of Contents
+                </a>
+                <a href="chapter_02.html" class="btn btn-primary btn-sm">
+                    Primitive Types <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

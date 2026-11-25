@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 12: Modular Architecture & Multi-File Projects - C Unlocked by Braiden Gole." />
+        <meta name="author" content="Braiden Gole" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, modular architecture, and multi-file projects by Braiden Gole." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 12: Modular Architecture &amp; Multi-File Projects | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 12: Modular Architecture &amp; Multi-File Projects</h2>
+
+                <div class="lead mb-4">
+                    Scaling C software beyond single-file scripts requires organizing source code into distinct modules. Mastering header guards, separation of interface declarations from implementation details, static internal linkage, and multi-file linking is essential for building professional systems architectures.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">12.1 Separating Interface (`.h`) from Implementation (`.c`)</h4>
+                <p>Professional C projects isolate code into independent modules. Each module typically consists of two corresponding files:</p>
+                <ol class="mb-3">
+                    <li><strong>Header File (<code>.h</code>):</strong> Serves as the public interface, containing type definitions, struct declarations, <code>enum</code> constants, and function prototypes.</li>
+                    <li><strong>Implementation File (<code>.c</code>):</strong> Contains the actual executable function bodies, private helper routines, and local state management.</li>
+                </ol>
+                <p>Splitting code prevents tight coupling, hides internal implementation details from external consumers, and speeds up compilation times by enabling incremental builds.</p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">12.2 Header Guards &amp; Multiple Inclusion Protection</h4>
+                <p>When multiple source files include the same header file transitively, the compiler encounters duplicate symbol declarations, triggering compilation errors. Developers prevent this vulnerability by wrapping every header file in <strong>header guards</strong> using preprocessor directives:</p>
+
+                <!-- Header Guard C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#ifndef SENSOR_MODULE_H
+#define SENSOR_MODULE_H
+
+// Prevent multiple inclusion of header file definitions.
+// Header content, declarations, and prototypes reside here.
+
+#endif</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">12.3 Internal Linkage with the `static` Keyword</h4>
+                <p>By default, global variables and non-static functions declared in C source files possess external linkage, making them visible across the entire multi-file project during the linking stage. Prefacing a function or global variable definition with the <code>static</code> keyword restricts its visibility strictly to the local translation unit (file), enforcing strict encapsulation and preventing naming collisions.</p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">12.4 Comprehensive Systems Demonstration: Modular Sensor Manager</h4>
+                <p>The following detailed systems demonstration illustrates splitting a modular project into a public header file, an implementation file enforcing internal linkage via <code>static</code>, and a main execution driver file:</p>
+
+                <p><strong>1. Header File (<code>./include/sensor_manager.h</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#ifndef SENSOR_MANAGER_H
+#define SENSOR_MANAGER_H
+
+// Include standard integer and boolean definitions.
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Define a public composite structure for sensor configuration parameters.
+typedef struct 
+{
+    uint32_t id;
+    float frequency;
+    bool status;
+} sensor_config_record_t;
+
+// Public function prototypes exposed to external callers.
+bool initialize_sensor_manager(const sensor_config_record_t* const configurations);
+float read_calibrated_sensor_value(void);
+
+#endif</code></pre>
+
+                <p><strong>2. Implementation File (<code>./src/sensor_manager.c</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+
+// Include the corresponding module header file interface.
+#include &quot;sensor_manager.h&quot;
+
+// Define static internal state variables hidden from external translation units.
+static float internal_calibration_offset = 1.25f;
+static bool module_initialized_flag = false;
+
+// Define a private helper function restricted to internal linkage via static.
+static float apply_calibration_scaling(float reading)
+{
+    // Multiply raw reading sample by internal calibration factor.
+    return reading * internal_calibration_offset;
+}
+
+bool initialize_sensor_manager(const sensor_config_record_t* const configurations)
+{
+    // Validate configuration pointer defensively against NULL.
+    if (configurations == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Received null configuration pointer.\n");
+
+        // Return false indicating initialization failure.
+        return false;
+    }
+
+    // Print sensor initialization message containing ID and frequency.
+    printf("Initializing Sensor ID %u at %.1f Hz...\n", 
+           configurations-&gt;id, 
+           configurations-&gt;frequency);
+
+    // Set module initialization flag to true.
+    module_initialized_flag = true;
+
+    // Return true indicating successful initialization.
+    return true;
+}
+
+float read_calibrated_sensor_value(void)
+{
+    // Verify that the sensor manager module has been successfully initialized.
+    if (!module_initialized_flag)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Sensor manager not initialized.\n");
+
+        // Return zero default value.
+        return 0.0f;
+    }
+
+    // Define mock raw sample sensor reading.
+    float raw_sample = 42.5f;
+
+    // Apply calibration scaling and return final value.
+    return apply_calibration_scaling(raw_sample);
+}</code></pre>
+
+                <p><strong>3. Main Application Driver (<code>./src/main.c</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+// Include the public sensor manager module header file.
+#include "sensor_manager.h"
+
+int main(void)
+{
+    // Initialize primary sensor configuration structure instance.
+    sensor_config_record_t primary_sensor_config = 
+    {
+        .id = 9001,
+        .frequency = 50.0f,
+        .status = true
+    };
+
+    // Initialize sensor manager module defensively.
+    if (!initialize_sensor_manager(&primary_sensor_config))
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to initialize sensor manager module.\n");
+
+        // Return failure status code to operating system.
+        return EXIT_FAILURE;
+    }
+
+    // Retrieve final calibrated sensor reading.
+    float final_reading = read_calibrated_sensor_value();
+
+    // Output successfully retrieved calibrated sensor reading.
+    printf("Successfully retrieved calibrated sensor reading: %.2f\n", final_reading);
+    printf("Modular architecture execution completed successfully.\n");
+
+    // Return success status code to operating system.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <p><strong>4. Multi-File Compilation Commands:</strong></p>
+                <p><strong>Windows (GCC / MinGW Command Pipeline):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-bash p-3">gcc .\src\main.c .\src\sensor_manager.c -I.\include -o .\bin\modular_sensor_app.exe</code></pre>
+
+                <p><strong>macOS &amp; Linux (Clang / GCC Command Pipeline):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-bash p-3">clang ./src/main.c ./src/sensor_manager.c -I./include -o ./bin/modular_sensor_app</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">12.5 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Always separate public interfaces (<code>.h</code>) from executable implementation bodies (<code>.c</code>).</li>
+                    <li class="mb-2">Protect every header file with unique header guards (<code>#ifndef</code>, <code>#define</code>, <code>#endif</code>) to prevent duplicate inclusion errors.</li>
+                    <li class="mb-2">Utilize the <code>static</code> keyword on helper functions and internal variables to enforce strict file-level encapsulation.</li>
+                    <li class="mb-2">Include header include directories using compiler flags like <code>-I./include</code> (or <code>-I.\include</code> on Windows) during multi-file compilation builds.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_11.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Preprocessor Macros
+                </a>
+                <a href="chapter_13.html" class="btn btn-primary btn-sm">
+                    Error Handling <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

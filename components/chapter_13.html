@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 13: Error Handling & Assertions - C Unlocked by Braiden Gole." />
+        <meta name="author" content="Braiden Gole" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, error handling, and assertions by Braiden Gole." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 13: Error Handling &amp; Assertions | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 13: Error Handling &amp; Assertions</h2>
+                <div class="lead mb-4">
+                    Unlike high-level languages equipped with exceptions, standard C handles runtime anomalies through explicit error codes, status enums, pointer validation, operating system error indicators, and runtime assertions. Mastering defensive error propagation and contract validation is paramount for building crash-resistant systems software.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">13.1 Explicit Return Codes &amp; Status Enums</h4>
+                <p>Standard C lacks native exception handling constructs like <code>try</code> and <code>catch</code>. Instead, robust systems functions return explicit status indicators such as boolean success flags, integer error codes, or custom <code>enum</code> status types allowing callers to inspect return values immediately and handle failures gracefully.</p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">13.2 Runtime Assertions with <code>&lt;assert.h&gt;</code></h4>
+                <p>Assertions (provided by the standard library header <code>&lt;assert.h&gt;</code>) enforce internal invariants and programmer assumptions during development and debugging. If an assertion condition evaluates to false (<code>0</code>), the program immediately terminates via <code>abort()</code>, printing diagnostic information to standard error.</p>
+                <p>Assertions should never be used to validate user input or recoverable runtime failures like out-of-memory errors; they are strictly designed to catch internal logic bugs and violated preconditions.</p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">13.3 System Error Handling with `errno` and `strerror()`</h4>
+                <p>When interacting with operating system calls and standard I/O streams (such as opening files or managing system resources), C sets the global thread-safe variable <code>errno</code> (declared in <code>&lt;errno.h&gt;</code>). Inspecting <code>errno</code> immediately following a failed library call allows developers to translate numeric error codes into human-readable diagnostic strings using <code>strerror()</code>.</p>
+                <p>The following example demonstrates defensive file stream opening with <code>errno</code> error extraction:</p>
+
+                <!-- Errno File Handling C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;string.h&gt;
+
+int main(void)
+{
+    // Attempt to open a non-existent configuration file in read mode.
+    const char* path = "./config/non_existent_settings.conf";
+
+    FILE* configuration_file = fopen(path, "r");
+
+    // Validate file pointer defensively.
+    if (configuration_file == NULL)
+    {
+        // Capture the operating system error code stored in errno.
+        int saved_error_code = errno;
+
+        fprintf(stderr, "Error: Failed to open file '%s'. Reason: %s (Errno Code: %d)\n",
+                path, strerror(saved_error_code), saved_error_code);
+
+        return EXIT_FAILURE;
+    }
+
+    // This block is unreachable in this example.
+    fclose(configuration_file);
+    
+    configuration_file = NULL;
+
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">13.4 Comprehensive Systems Demonstration: Robust Error Handling &amp; Assertion Engine</h4>
+                <p>The following detailed systems demonstration illustrates combining explicit status enums, defensive pointer checking, and runtime assertions to validate inputs and manage heap allocation errors safely:</p>
+
+                <!-- Error Handling C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;assert.h&gt;
+
+// Define an enumeration for explicit function status and error codes.
+typedef enum 
+{
+    SYSTEM_STATUS_SUCCESS = 0,
+    SYSTEM_ERROR_NULL_POINTER = 1,
+    SYSTEM_ERROR_INVALID_CAPACITY = 2,
+    SYSTEM_ERROR_ALLOCATION_FAIL = 3
+} system_status_t;
+
+// Function prototype utilizing explicit status return codes.
+system_status_t allocate_secure_buffer(int32_t** output_addresses, size_t count);
+
+int main(void)
+{
+    int32_t* secure_data = NULL;
+
+    size_t number_of_items = 10;
+
+    // Invoke function and capture explicit status return code.
+    system_status_t status = allocate_secure_buffer(&secure_data, number_of_items);
+
+    if (status != SYSTEM_STATUS_SUCCESS)
+    {
+        fprintf(stderr, "Error: Secure buffer allocation failed with status code %d.\n", status);
+
+        return EXIT_FAILURE;
+    }
+
+    // Use runtime assertion to guarantee pointer validity before processing.
+    assert(secure_data != NULL);
+
+    printf("Secure buffer successfully allocated and validated via assertions.\n");
+
+    // Populate buffer elements safely.
+    for (size_t index = 0; index &lt; number_of_items; index++)
+    {
+        secure_data[index] = (int32_t)(index * 100);
+    }
+
+    // Safely release allocated memory.
+    free(secure_data);
+
+    secure_data = NULL;
+
+    printf("Memory successfully released and error handling sequence completed.\n");
+
+    return EXIT_SUCCESS;
+}
+
+system_status_t allocate_secure_buffer(int32_t** output_addresses, size_t count)
+{
+    // Validate pointer parameters defensively.
+    if (output_addresses == NULL)
+    {
+        return SYSTEM_ERROR_NULL_POINTER;
+    }
+
+    // Validate operational bounds defensively.
+    if (count == 0)
+    {
+        return SYSTEM_ERROR_INVALID_CAPACITY;
+    }
+
+    // Allocate memory on the heap.
+    int32_t* block = (int32_t*)malloc(count * sizeof(int32_t));
+
+    if (block == NULL)
+    {
+        return SYSTEM_ERROR_ALLOCATION_FAIL;
+    }
+
+    // Dereference double pointer to assign allocated block.
+    *output_addresses = block;
+
+    return SYSTEM_STATUS_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">13.5 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Use explicit status enums or error codes to propagate recoverable runtime failures back to calling routines.</li>
+                    <li class="mb-2">Always validate pointer arguments and operational bounds defensively before executing core logic.</li>
+                    <li class="mb-2">Inspect <code>errno</code> and translate codes with <code>strerror()</code> when standard library operations fail.</li>
+                    <li class="mb-2">Use <code>assert()</code> from <code>&lt;assert.h&gt;</code> to catch internal logic flaws and programmer assumption violations during development.</li>
+                    <li class="mb-2">Never use assertions to handle expected or recoverable runtime errors such as network timeouts or missing files.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_12.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Modular Architecture
+                </a>
+                <a href="chapter_14.html" class="btn btn-primary btn-sm">
+                    Bitwise Operations<i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

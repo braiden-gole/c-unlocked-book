@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 9: File I/O & Binary Streams - C Unlocked by Braiden Gole." />
+        <meta name="author" content="Braiden Gole" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, file I/O, binary streams, and JSON parsing by Braiden Gole." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 9: File I/O &amp; Binary Streams | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 9: File I/O &amp; Binary Streams</h2>
+                <div class="lead mb-4">
+                    Interacting with persistent storage allows C programs to save state, serialize data structures, and process raw binary files. Mastering stream pointers, defensive error validation, binary block I/O, random file navigation, and text-based configuration parsing is essential for building production-grade systems software.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">9.1 Introduction to Streams &amp; File Pointers (`FILE*`)</h4>
+                <p>In C, file input and output operations do not communicate directly with physical disk sectors; instead, they interact through abstract data channels known as <strong>streams</strong>. A stream represents a continuous sequence of bytes flowing to or from a physical device, file, or network socket.</p>
+                <p>The standard library (declared in <code>&lt;stdio.h&gt;</code>) manages these streams using pointers to a composite structure designated as <code>FILE *</code>. Opening a file returns a valid <code>FILE *</code> handle that governs subsequent read, write, and navigation operations.</p>
+                <p>The following example demonstrates declaring a file stream pointer and associating it with standard output streams:</p>
+
+                <!-- 9.1 Stream Pointer Introduction C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main(void)
+{
+    // The standard output stream handle managed by the C runtime.
+    FILE* standard_output_stream = stdout;
+
+    // Verify that the standard output stream pointer is valid before writing.
+    if (standard_output_stream != NULL)
+    {
+        // Write a diagnostic status message directly to the standard output stream.
+        fprintf(standard_output_stream, "System stream operational check: Standard output active.\n");
+    }
+
+    // Return success status code to the operating system environment.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">9.2 Opening, Closing &amp; Defensive Validation</h4>
+                <p>Files are opened using the <code>fopen()</code> function, which accepts a target file path string and an operational mode specifier (such as <code>"r"</code> for reading text, <code>"w"</code> for writing text, <code>"rb"</code> for reading binary streams, or <code>"wb"</code> for writing binary streams).</p>
+                <p>Because file opening can fail due to missing permissions, locked resources, or invalid paths, <strong>every call to <code>fopen()</code> must be defensively validated against <code>NULL</code></strong>. Furthermore, just as every heap allocation requires a matching <code>free()</code> call, <strong>every successfully opened stream requires a matching call to <code>fclose()</code></strong> to flush internal buffers and release operating system file descriptors.</p>
+                <p>The following example demonstrates defensive validation of <code>fopen()</code> and proper stream closure using <code>fclose()</code>:</p>
+
+                <!-- 9.2 Opening Closing Validation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdbool.h&gt;
+
+int main(void)
+{
+    // Define the target filename string literal constant.
+    const char* const filepath = "runtime_status_log.txt";
+
+    // Open file stream in text write mode ("w").
+    FILE* file_stream = fopen(filepath, "w");
+
+    // Defensively check if fopen succeeded and returned a valid pointer.
+    if (file_stream == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to open file path '%s' for writing.\n", filepath);
+
+        // Return failure status code to the operating system.
+        return EXIT_FAILURE;
+    }
+
+    // Write initialization message into the active file stream.
+    fprintf(file_stream, "System initialized successfully.\n");
+
+    // Flush internal buffers and close the stream, verifying success.
+    if (fclose(file_stream) != 0)
+    {
+        // Print error message if stream closure fails.
+        fprintf(stderr, "Error: Failed to close file stream successfully.\n");
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Print confirmation message to standard output.
+    printf("File stream opened, written, and closed safely.\n");
+
+    // Return success status code to the operating system.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">9.3 Binary Block Operations with `fread()` and `fwrite()`</h4>
+                <p>While text functions like <code>fprintf()</code> and <code>fgets()</code> format data into human-readable strings, systems software frequently requires saving raw memory blocks or composite structures verbatim. The standard library provides <code>fread()</code> and <code>fwrite()</code> to transfer raw byte blocks efficiently between memory and disk.</p>
+                <p>These functions accept a pointer to the data buffer, the individual byte size of each element, the total element count, and the active <code>FILE *</code> stream handle. Production code must always inspect the return values of these functions to verify that the complete byte count was successfully transferred.</p>
+                <p>The following example demonstrates writing and reading raw binary blocks using <code>fwrite()</code> and <code>fread()</code> with full return verification:</p>
+
+                <!-- 9.3 Binary Block Operations C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+int main(void)
+{
+    // Define binary file path constant.
+    const char* const binary_filepath = "sensor_buffer_dump.bin";
+
+    // Initialize outbound sensor values array.
+    uint32_t outbound_sensor_values[] = {100, 200, 300, 400};
+
+    // Calculate total element count of the array.
+    size_t count = sizeof(outbound_sensor_values) / sizeof(outbound_sensor_values[0]);
+
+    // 1. Open binary file stream for writing ("wb").
+    FILE* write_stream = fopen(binary_filepath, "wb");
+
+    // Verify file opening success.
+    if (write_stream == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to open binary file for writing.\n");
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Write binary block using fwrite and capture blocks written count.
+    size_t blocks_written = fwrite(outbound_sensor_values, sizeof(uint32_t), count, write_stream);
+
+    // Verify that all blocks were written successfully.
+    if (blocks_written != count)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: fwrite failed to write complete data block.\n");
+
+        // Close stream before termination.
+        fclose(write_stream);
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Close the write stream safely.
+    fclose(write_stream);
+
+    // 2. Initialize inbound buffer array for reading.
+    uint32_t inbound_sensor_values[4] = {0};
+
+    // Open binary file stream for reading ("rb").
+    FILE* read_stream = fopen(binary_filepath, "rb");
+
+    // Verify file opening success.
+    if (read_stream == NULL)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: Failed to open binary file for reading.\n");
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Read binary block back into memory using fread and capture blocks read count.
+    size_t blocks_read = fread(inbound_sensor_values, sizeof(uint32_t), count, read_stream);
+
+    // Verify that all expected blocks were read successfully.
+    if (blocks_read != count)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: fread failed to read complete data block.\n");
+        
+        // Close stream before termination.
+        fclose(read_stream);
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Close the read stream safely.
+    fclose(read_stream);
+
+    // Print successfully verified round-trip values.
+    printf("Successfully verified binary block round-trip: %u, %u, %u, %u\n",
+           inbound_sensor_values[0], inbound_sensor_values[1],
+           inbound_sensor_values[2], inbound_sensor_values[3]);
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">9.4 Random Access Navigation with `fseek()` and `ftell()`</h4>
+                <p>Sequential file reading processes bytes in strict order from beginning to end. However, complex file formats and database indexes require jumping directly to specific byte offsets. C enables random access navigation using <code>fseek()</code> to reposition the file position indicator and <code>ftell()</code> to inspect the current byte offset within the stream.</p>
+                <p>The following example demonstrates jumping to specific byte positions within a binary stream using <code>fseek()</code> and inspecting offsets using <code>ftell()</code>:</p>
+
+                <!-- 9.4 Random Access Navigation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+
+int main(void)
+{
+    // Define file path and initialize sequence values.
+    const char* const filepath = "index_offset_test.bin";
+    uint32_t sequence_values[] = {10, 20, 30, 40};
+    size_t count = sizeof(sequence_values) / sizeof(sequence_values[0]);
+
+    // Open file stream in binary read/write mode ("wb+").
+    FILE* stream = fopen(filepath, "wb+");
+
+    // Verify stream creation success.
+    if (stream == NULL)
+    {
+        // Return failure status if opening fails.
+        return EXIT_FAILURE;
+    }
+
+    // Write initial sequence values into the binary stream.
+    fwrite(sequence_values, sizeof(uint32_t), count, stream);
+
+    // Reposition file indicator to index 2 (offset = 2 * sizeof(uint32_t)).
+    long target_offset = (long)(2 * sizeof(uint32_t));
+
+    // Execute fseek and verify that navigation succeeded.
+    if (fseek(stream, target_offset, SEEK_SET) != 0)
+    {
+        // Print error message and close stream.
+        fprintf(stderr, "Error: fseek navigation failed.\n");
+        
+        fclose(stream);
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Inspect current byte offset using ftell.
+    long current_position = ftell(stream);
+
+    // Print current inspected position offset.
+    printf("Current byte stream position offset: %ld bytes\n", current_position);
+
+    // Initialize variable to hold queried value.
+    uint32_t target_value = 0;
+
+    // Read value at current stream position.
+    fread(&target_value, sizeof(uint32_t), 1, stream);
+
+    // Print the randomly accessed value.
+    printf("Random access value queried at offset: %u\n", target_value);
+
+    // Close stream safely.
+    fclose(stream);
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">9.5 Comprehensive Systems Demonstration: Binary Record Serializer &amp; Parser</h4>
+                <p>The following detailed systems demonstration illustrates writing composite structure records to a binary file, repositioning the file pointer using <code>fseek()</code>, reading specific records back into memory, and ensuring rigorous error handling and resource cleanup:</p>
+
+                <!-- File IO Binary Streams C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;string.h&gt;
+
+// Define a composite structure representing a persistent sensor telemetry log record.
+typedef struct 
+{
+    uint32_t id;
+    uint32_t epoch;
+    float telemetry_reading;
+    char location_tag[24];
+} sensor_log_record_t;
+
+// Function prototypes adhering to strict pointer and stream contracts.
+bool write_sensor_record(const char* const path, const sensor_log_record_t* const records, size_t count);
+bool read_specific_sensor_record(const char* const path, size_t target_record_index, sensor_log_record_t* const output_records);
+
+int main(void)
+{
+    // Define binary archive filename constant.
+    const char* const filename = "sensor_telemetry_archive.bin";
+
+    // Define total number of records.
+    size_t number_of_records = 3;
+
+    // Initialize an array of sensor log records.
+    sensor_log_record_t telemetry_records[3] = {
+        {
+            .id = 5001,
+            .epoch = 1718000000,
+            .telemetry_reading = 45.23f
+        },
+        {
+            .id = 5002,
+            .epoch = 1718000060,
+            .telemetry_reading = 47.89f
+        },
+        {
+            .id = 5003,
+            .epoch = 1718000120,
+            .telemetry_reading = 42.11f
+        }
+    };
+
+    // Populate location tag strings safely using snprintf.
+    snprintf(telemetry_records[0].location_tag, sizeof(telemetry_records[0].location_tag), "%s", "SectorAlpha");
+    snprintf(telemetry_records[1].location_tag, sizeof(telemetry_records[1].location_tag), "%s", "SectorBeta");
+    snprintf(telemetry_records[2].location_tag, sizeof(telemetry_records[2].location_tag), "%s", "SectorGamma");
+
+    // Serialize and write records to binary file.
+    if (!write_sensor_record(filename, telemetry_records, number_of_records))
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to write telemetry records to binary file.\n");
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Print confirmation of successful serialization.
+    printf("Successfully serialized and archived %zu records to binary file: %s\n", number_of_records, filename);
+
+    // Demonstrate random access reading by querying record index 1 directly via fseek.
+    size_t target_index = 1;
+
+    sensor_log_record_t queried_record = {0};
+
+    // Read specific record using random access navigation.
+    if (!read_specific_sensor_record(filename, target_index, &queried_record))
+    {
+        // Print error message.
+        fprintf(stderr, "Error: Failed to read specific sensor record at index %zu.\n", target_index);
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Output queried record details.
+    printf("\n--- Random Access Query Result (Record Index %zu) ---\n", target_index);
+    printf("Record ID: %u | Timestamp: %u | Reading: %.2f | Location: %s\n",
+           queried_record.id,
+           queried_record.epoch,
+           queried_record.telemetry_reading,
+           queried_record.location_tag);
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}
+
+bool write_sensor_record(const char* const path, const sensor_log_record_t* const records, size_t count)
+{
+    // Validate pointers defensively.
+    if (path == NULL || records == NULL || count == 0)
+    {
+        // Return false if parameters are invalid.
+        return false;
+    }
+
+    // Open file stream in binary write mode ("wb").
+    FILE* stream = fopen(path, "wb");
+
+    // Defensively check if fopen succeeded.
+    if (stream == NULL)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: Failed to open file path '%s' for binary writing.\n", path);
+
+        // Return false.
+        return false;
+    }
+
+    // Write the complete array block to disk using fwrite.
+    size_t blocks_written = fwrite(records, sizeof(sensor_log_record_t), count, stream);
+
+    // Verify that all requested records were successfully written.
+    if (blocks_written != count)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: fwrite failed to write all records (%zu of %zu written).\n", blocks_written, count);
+
+        // Close stream before returning.
+        fclose(stream);
+
+        // Return false.
+        return false;
+    }
+
+    // Flush and close the stream, verifying successful closure.
+    if (fclose(stream) != 0)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: Failed to close file stream successfully.\n");
+
+        // Return false.
+        return false;
+    }
+
+    // Return true indicating successful write execution.
+    return true;
+}
+
+bool read_specific_sensor_record(const char* const file_path, size_t target_record_index, sensor_log_record_t* const output_record_pointer)
+{
+    // Validate pointers defensively.
+    if (file_path == NULL || output_record_pointer == NULL)
+    {
+        // Return false if pointers are invalid.
+        return false;
+    }
+
+    // Open file stream in binary read mode ("rb").
+    FILE* file = fopen(file_path, "rb");
+
+    // Defensively check if fopen succeeded.
+    if (file == NULL)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: Failed to open file path '%s' for binary reading.\n", file_path);
+
+        // Return false.
+        return false;
+    }
+
+    // Calculate byte offset using fseek and target record index.
+    long byte_offset = (long)(target_record_index * sizeof(sensor_log_record_t));
+
+    // Reposition file position indicator using fseek (SEEK_SET measures from the beginning of the file).
+    if (fseek(file, byte_offset, SEEK_SET) != 0)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: fseek failed to navigate to byte offset %ld.\n", byte_offset);
+
+        // Close file stream before returning.
+        fclose(file);
+
+        // Return false.
+        return false;
+    }
+
+    // Read the single structured record from the stream into memory using fread.
+    size_t blocks_read = fread(output_record_pointer, sizeof(sensor_log_record_t), 1, file);
+
+    // Verify that the record was read successfully.
+    if (blocks_read != 1)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: fread failed to read record at index %zu.\n", target_record_index);
+
+        // Close file stream before returning.
+        fclose(file);
+
+        // Return false.
+        return false;
+    }
+
+    // Close the file stream, verifying successful closure.
+    if (fclose(file) != 0)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: Failed to close file stream successfully.\n");
+
+        // Return false.
+        return false;
+    }
+
+    // Return true indicating successful record read execution.
+    return true;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">9.6 Practical Systems Application: Parsing Configuration Files in C</h4>
+                <p>Systems software frequently reads human-readable configuration files to establish operational parameters. While standard C lacks native object serialization, applications often parse structured text formats such as JSON styled key-value configuration files by streaming line contents into memory buffers, validating pointers defensively, and extracting parameters safely using string scanning functions like <code>sscanf()</code>.</p>
+                <p>The following example demonstrates reading and parsing a text configuration file stream line-by-line:</p>
+
+                <!-- JSON Configuration Parser C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;string.h&gt;
+
+// Define a structure to store parsed configuration settings.
+typedef struct 
+{
+    char name[32];
+    uint32_t port;
+    int32_t maximum_worker_threads;
+} system_configuration_t;
+
+// Function prototype for parsing configuration file streams.
+bool parse_system_configuration_file(const char* const path, system_configuration_t* const configuration);
+
+int main(void)
+{
+    // Define config filename constant.
+    const char* const configuration_filename = "system_config.json";
+
+    // Create a sample JSON configuration text file on disk for demonstration.
+    FILE* configuration_stream = fopen(configuration_filename, "w");
+
+    // Verify file creation success.
+    if (configuration_stream != NULL)
+    {
+        // Write mock JSON configuration parameters to disk.
+        fprintf(configuration_stream, "{\n");
+        fprintf(configuration_stream, "  \"maximum_worker_threads\": 8,\n");
+        fprintf(configuration_stream, "  \"port\": 8080,\n");
+        fprintf(configuration_stream, "  \"name\": \"production\"\n");
+        fprintf(configuration_stream, "}\n");
+
+        // Close configuration stream.
+        fclose(configuration_stream);
+
+        // Nullify pointer.
+        configuration_stream = NULL;
+    }
+
+    // Initialize configuration structure to zeroes.
+    system_configuration_t active_configuration = {0};
+
+    // Parse the configuration file stream.
+    if (!parse_system_configuration_file(configuration_filename, &active_configuration))
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Failed to parse configuration file.\n");
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Output successfully parsed configuration settings.
+    printf("\n--- Successfully Parsed Configuration Settings ---\n");
+    printf("- Max Worker Threads   : %d\n", active_configuration.maximum_worker_threads);
+    printf("- Network Port Number  : %u\n", active_configuration.port);
+    printf("- Server Environment   : %s\n", active_configuration.name);
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}
+
+bool parse_system_configuration_file(const char* const path, system_configuration_t* const configuration)
+{
+    // Validate pointers defensively.
+    if (path == NULL || configuration == NULL)
+    {
+        // Return false if pointers are invalid.
+        return false;
+    }
+
+    // Open file stream in text read mode ("r").
+    FILE* configuration_stream = fopen(path, "r");
+
+    // Verify file opening success.
+    if (configuration_stream == NULL)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: Failed to open configuration file '%s' for reading.\n", path);
+
+        // Return false.
+        return false;
+    }
+
+    // Allocate line buffer for reading text streams.
+    char line[256];
+
+    // Read stream line-by-line using fgets.
+    while (fgets(line, sizeof(line), configuration_stream) != NULL)
+    {
+        // Initialize temporary parsing variables.
+        int32_t parsed_threads = 0;
+        uint32_t parsed_port = 0;
+        
+        char parsed_environment[32] = {0};
+
+        // Scan line for integer thread parameter.
+        if (sscanf(line, " \"maximum_worker_threads\" : %d ,", &parsed_threads) == 1)
+        {
+            configuration->maximum_worker_threads = parsed_threads;
+        }
+        // Scan line for unsigned integer network port parameter.
+        else if (sscanf(line, " \"port\" : %u ,", &parsed_port) == 1)
+        {
+            configuration->port = parsed_port;
+        }
+        // Scan line for string environment parameter.
+        else if (sscanf(line, " \"name\" : \"%31[^\"]\" ", parsed_environment) == 1)
+        {
+            snprintf(configuration->name, sizeof(configuration->name), "%s", parsed_environment);
+        }
+    }
+
+    // Close configuration stream, verifying successful closure.
+    if (fclose(configuration_stream) != 0)
+    {
+        // Print error message.
+        fprintf(stderr, "Error: Failed to close file stream successfully.\n");
+
+        // Return false.
+        return false;
+    }
+
+    // Return true indicating successful configuration parsing.
+    return true;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">9.7 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Always validate the return value of <code>fopen()</code> against <code>NULL</code> before attempting any read or write operations.</li>
+                    <li class="mb-2"><strong>Every call to <code>fopen()</code> requires a matching call to <code>fclose()</code></strong> to flush buffers and release system file descriptors.</li>
+                    <li class="mb-2">Use binary modes (<code>"rb"</code> and <code>"wb"</code>) when serializing raw memory blocks or composite structure records verbatim.</li>
+                    <li class="mb-2">Always inspect the return values of <code>fread()</code>, <code>fwrite()</code>, and <code>fseek()</code> to ensure data integrity and catch I/O errors immediately.</li>
+                    <li class="mb-2">Parse structured text configurations line-by-line using buffered streams (<code>fgets()</code>) and bounded string scanning (<code>sscanf()</code>).</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_08.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Structures, Unions &amp; Enums
+                </a>
+                <a href="chapter_10.html" class="btn btn-primary btn-sm">
+                    Advanced Pointerss <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

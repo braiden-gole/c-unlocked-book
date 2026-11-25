@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 17: C/C++ Interoperability - C Unlocked by Braiden Gole." />
+        <meta name="author" content="Braiden Gole" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C/C++ interoperability, name mangling, and ABI compatibility by Braiden Gole." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 17: C/C++ Interoperability | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 17: C/C++ Interoperability</h2>
+                <div class="lead mb-4">
+                    While C and C++ are closely related and share syntax origins, they possess fundamentally different linkage rules, type systems, and compiler behaviors. Mastering C/C++ interoperability, resolving name mangling challenges, utilizing the <code>extern "C"</code> directive, and ensuring Application Binary Interface (ABI) compatibility is essential for integrating legacy C libraries into modern C++ systems applications.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.1 Name Mangling &amp; The C++ Linkage Challenge</h4>
+                <p>When a C compiler compiles a function, it emits an object symbol matching the function name verbatim (e.g., <code>initialize_sensor_subsystem</code> compiles directly to the symbol <code>_initialize_sensor_subsystem</code> on ELF platforms). C++ compilers, however, support function overloading, namespaces, and templates. To distinguish overloaded functions with identical names but different parameter types, C++ compilers encode function signatures into the compiled symbol name, a process known as <strong>name mangling</strong>.</p>
+                <p>If a C++ module attempts to link against a compiled C library object without proper linkage specifications, the linker fails with unresolved external symbol errors because the C++ code expects a mangled symbol name while the C library provides a plain, unmangled symbol.</p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.2 The `extern "C"` Directive</h4>
+                <p>To instruct a C++ compiler to suppress name mangling for specific functions and export them with C-compatible linkage, developers wrap function declarations in the <code>extern "C"</code> linkage specification block.</p>
+                <p>Professional header files designed to be compiled by both C and C++ compilers utilize conditional preprocessor guards checking for <code>__cplusplus</code>, wrapping exports automatically so that C compilers ignore the directive while C++ compilers activate C linkage:</p>
+
+                <!-- Extern C Guard Header C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#ifndef SHARED_SENSOR_LIBRARY_H
+#define SHARED_SENSOR_LIBRARY_H
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Check if the compiler is a C++ compiler.
+#ifdef __cplusplus
+// Instruct the C++ compiler to use C linkage for enclosed declarations.
+extern "C" {
+#endif
+
+// Public function prototypes sharing strict C and C++ ABI compatibility.
+bool initialize_shared_sensor_node(uint32_t node_identifier, float sampling_rate);
+float fetch_latest_telemetry_reading(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.3 Struct Layout, ABI Compatibility &amp; ODR</h4>
+                <p>Achieving seamless interoperability requires maintaining identical Application Binary Interface (ABI) layouts across language boundaries. When sharing data structures between C and C++ modules, developers must adhere to strict guidelines:</p>
+                <ul class="mb-3">
+                    <li><strong>Plain Old Data (POD):</strong> Structures passed across language boundaries should contain only primitive data types, fixed arrays, or nested POD structs without virtual member functions, constructors, destructors, or private visibility specifiers.</li>
+                    <li><strong>Padding and Alignment:</strong> Compilers across both toolchains must agree on member alignment rules to prevent structural offset mismatches.</li>
+                    <li><strong>The One Definition Rule (ODR):</strong> Struct definitions shared between C and C++ must maintain exact field ordering and data widths to prevent memory corruption.</li>
+                </ul>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.4 Comprehensive Systems Demonstration: Calling a C Library from C++</h4>
+                <p>The following detailed systems demonstration illustrates a complete multi-file setup where a C implementation library is consumed and executed safely inside a C++ main driver application:</p>
+
+                <p><strong>1. Shared C Library Header (<code>include/device_controller.h</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#ifndef DEVICE_CONTROLLER_H
+#define DEVICE_CONTROLLER_H
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Define a C-compatible structured configuration record.
+typedef struct 
+{
+    uint32_t id;
+    uint32_t mode;
+    float voltage_threshold;
+} device_configuration_record_t;
+
+// Enforce C linkage for cross-language compatibility.
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+bool initialize_device_controller(const device_configuration_record_t* const configuration);
+bool execute_device_command(uint32_t command_code);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif</code></pre>
+
+                <p><strong>2. C Library Implementation (<code>src/device_controller.c</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+// Include the corresponding device controller header file.
+#include "device_controller.h"
+
+// Define static internal state variables for the controller module.
+static uint32_t active_device_id = 0;
+static float active_voltage_limit = 0.0f;
+static bool controller_flag = false;
+
+bool initialize_device_controller(const device_configuration_record_t* const configuration)
+{
+    // Validate configuration pointer defensively against null references.
+    if (configuration == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Received null configuration pointer in C controller module.\n");
+
+        // Return false indicating initialization failure.
+        return false;
+    }
+
+    // Assign configuration parameters to internal static state variables.
+    active_device_id = configuration->id;
+    active_voltage_limit = configuration->voltage_threshold;
+    controller_flag = true;
+
+    // Output initialization confirmation message.
+    printf("C Controller Initialized -> ID: %u | Mode: %u | Voltage Limit: %.2fV\n",
+           active_device_id,
+           configuration->mode,
+           active_voltage_limit);
+
+    // Return true indicating successful initialization.
+    return true;
+}
+
+bool execute_device_command(uint32_t command_code)
+{
+    // Verify that the controller has been successfully initialized.
+    if (!controller_flag)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Device controller not initialized before command execution.\n");
+
+        // Return false indicating execution failure.
+        return false;
+    }
+
+    // Output command execution confirmation.
+    printf("C Controller Successfully Executed Command Code: 0x%08X for Device ID: %u\n",
+           command_code, active_device_id);
+
+    // Return true indicating successful command execution.
+    return true;
+}</code></pre>
+
+                <p><strong>3. C++ Main Application Driver (<code>src/main.cpp</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-cpp p-3">#include &lt;iostream&gt;
+#include &lt;cstdlib&gt;
+
+// Include the C library header wrapped with extern "C" linkage guards.
+#include "device_controller.h"
+
+int main(void)
+{
+    // Initialize configuration structure instance in C++ application.
+    device_configuration_record_t application_config = {
+        .id = 8841,
+        .mode = 2,
+        .voltage_threshold = 12.5f
+    };
+
+    // Invoke C library function from C++ code safely.
+    bool status = initialize_device_controller(&application_config);
+
+    if (!status)
+    {
+        // Print error message to standard error stream.
+        std::cerr &lt;&lt; "Error: C++ main driver failed to initialize C device controller.\n";
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Define command code constant.
+    uint32_t target_command = 0xDEADBEEF;
+
+    // Execute command via C function interface.
+    bool command_status = execute_device_command(target_command);
+
+    if (!command_status)
+    {
+        // Print error message to standard error stream.
+        std::cerr &lt;&lt; "Error: C++ main driver failed to execute device command.\n";
+
+        // Return failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Output completion confirmation message.
+    std::cout &lt;&lt; "C/C++ interoperability execution completed successfully.\n";
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.5 Comprehensive Systems Demonstration: Passing Callbacks Across Language Boundaries</h4>
+                <p>When integrating event-driven C libraries with C++ applications, developers frequently need to pass callback function pointers across language boundaries. The following demonstration illustrates registering a C++ lambda or static function callback into a C-based event dispatcher engine:</p>
+
+                <!-- C/C++ Callback Interop C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Define a C-compatible function pointer type for telemetry event callbacks.
+typedef void (*telemetry_event_callback_t)(uint32_t event_code, float reading_value);
+
+// Define static internal callback pointer variable.
+static telemetry_event_callback_t registered_event_callback = NULL;
+
+// Function to register external event callbacks.
+bool register_telemetry_event_callback(telemetry_event_callback_t callback_function_pointer)
+{
+    // Validate callback pointer defensively against null references.
+    if (callback_function_pointer == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Received null callback function pointer.\n");
+
+        // Return false indicating registration failure.
+        return false;
+    }
+
+    // Store callback pointer in static module state.
+    registered_event_callback = callback_function_pointer;
+
+    // Return true indicating successful registration.
+    return true;
+}
+
+// Function simulating an incoming telemetry trigger event.
+void simulate_incoming_telemetry_event(uint32_t event_code, float reading_value)
+{
+    // Check if a callback has been registered before invoking.
+    if (registered_event_callback != NULL)
+    {
+        // Invoke the registered callback function pointer across the module boundary.
+        registered_event_callback(event_code, reading_value);
+    }
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.6 Additional Example 1: Opaque Pointers (Handle Idiom) for Encapsulation</h4>
+                <p>A powerful architectural pattern in C and C++ interoperability is the <strong>Opaque Pointer (or Handle Idiom)</strong>. By forward-declaring an incomplete structure in a shared C header file, C++ consumers interact solely with a pointer handle. This completely hides internal structure member variables from C++ client code, enforcing strict data encapsulation and preventing ABI breakage when internal structure fields evolve:</p>
+
+                <!-- Opaque Pointer Handle Idiom C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#ifndef SENSOR_HANDLE_H
+#define SENSOR_HANDLE_H
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Forward declare an incomplete type to act as an opaque handle.
+typedef struct SensorSessionContext sensor_session_context_t;
+
+// Function prototype to create a new session instance.
+sensor_session_context_t* create_sensor_session(uint32_t session_identifier);
+
+// Function prototype to destroy and free session resources.
+bool destroy_sensor_session(sensor_session_context_t* const session_context_pointer);
+
+// Function prototype to sample telemetry using the session handle.
+bool execute_session_sampling(sensor_session_context_t* const session_context_pointer, float* const output_reading_pointer);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.7 Additional Example 2: C++ Exception Translation Boundary</h4>
+                <p>C functions cannot catch C++ exceptions, and throwing a C++ exception across a pure C stack boundary results in immediate undefined behavior and program crashes. Production-grade interoperability requires wrapping C++ operations in explicit <code>try/catch</code> blocks and translating exceptions into standard C error code enums:</p>
+
+                <!-- C++ Exception Translation Boundary C++ Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-cpp p-3">#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;cstdint&gt;
+#include &lt;cstdlib&gt;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Define C-compatible error code enumeration.
+typedef enum 
+{
+    SYSTEM_SUCCESS = 0,
+    SYSTEM_ERROR_NULL_POINTER = 1,
+    SYSTEM_ERROR_OUT_OF_BOUNDS = 2,
+    SYSTEM_ERROR_INTERNAL_EXCEPTION = 3
+} system_error_code_t;
+
+// Internal C++ function that might throw exceptions during processing.
+void internal_unsafe_processing_logic(uint32_t parameter)
+{
+    // Validate input parameter defensively.
+    if (parameter == 0)
+    {
+        // Throw a standard C++ exception.
+        throw std::invalid_argument("Error: Input parameter cannot be zero.");
+    }
+}
+
+// C-linkage wrapper function that catches C++ exceptions and translates them to C error codes.
+system_error_code_t safe_execute_processing_wrapper(uint32_t parameter)
+{
+    try
+    {
+        // Execute unsafe logic inside try block.
+        internal_unsafe_processing_logic(parameter);
+
+        // Return success status code.
+        return SYSTEM_SUCCESS;
+    }
+    catch (const std::exception& exception_reference)
+    {
+        // Log exception details to standard error stream.
+        std::cerr &lt;&lt; "Caught C++ Exception across boundary: " &lt;&lt; exception_reference.what() &lt;&lt; "\n";
+
+        // Return translated internal exception error code.
+        return SYSTEM_ERROR_INTERNAL_EXCEPTION;
+    }
+    catch (...)
+    {
+        // Log unknown exception details.
+        std::cerr &lt;&lt; "Caught unknown exception across C/C++ boundary.\n";
+
+        // Return error status code.
+        return SYSTEM_ERROR_INTERNAL_EXCEPTION;
+    }
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+int main(void)
+{
+    // Test exception translation boundary with zero input parameter.
+    system_error_code_t error_status = safe_execute_processing_wrapper(0);
+
+    // Verify error code result.
+    if (error_status != SYSTEM_SUCCESS)
+    {
+        std::cout &lt;&lt; "Successfully intercepted C++ exception and received C error code: " &lt;&lt; (int)error_status &lt;&lt; "\n";
+    }
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.8 Additional Example 3: C++ Class Method Trampoline Callback</h4>
+                <p>C event-driven libraries expect standard function pointers with C linkage, which cannot directly invoke non-static C++ class member methods because member methods require an implicit <code>this</code> pointer. To bridge this gap, developers use a <strong>static trampoline method</strong> combined with <code>static_cast</code> on a user context pointer:</p>
+
+                <!-- C++ Class Method Trampoline Callback C++ Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-cpp p-3">#include &lt;iostream&gt;
+#include &lt;cstdint&gt;
+#include &lt;cstdlib&gt;
+
+// Declare C event dispatcher interface.
+extern "C" {
+    // Define C-compatible callback function pointer type accepting a user context pointer.
+    typedef void (*event_notification_callback_t)(void* user_context, uint32_t event_id);
+
+    // Define static internal callback pointer and context variables.
+    static event_notification_callback_t global_registered_callback = nullptr;
+
+    static void* global_user_context_pointer = nullptr;
+
+    // Register C callback function and user context pointer.
+    void register_c_event_dispatcher(event_notification_callback_t callback_pointer, void* user_context)
+    {
+        global_registered_callback = callback_pointer;
+        global_user_context_pointer = user_context;
+    }
+
+    // Simulate triggering an event from the C system side.
+    void trigger_c_event(uint32_t event_id)
+    {
+        if (global_registered_callback != nullptr)
+        {
+            global_registered_callback(global_user_context_pointer, event_id);
+        }
+    }
+}
+
+// C++ class managing state and handling events via a static trampoline method.
+class SensorEventHandlerManager 
+{
+    private:
+        uint32_t manager_instance_id_;
+
+        // Static trampoline function compatible with C function pointer signature.
+        static void handle_c_callback_trampoline(void* user_context, uint32_t event_id)
+        {
+            // Cast the generic void user context pointer back to our C++ class instance.
+            SensorEventHandlerManager* instance = static_cast&lt;SensorEventHandlerManager*&gt;(user_context);
+
+            // Verify instance pointer validity.
+            if (instance != nullptr)
+            {
+                // Forward event notification to member method.
+                instance-&gt;handle_event_member_method(event_id);
+            }
+        }
+
+        // Concrete C++ class member method handling the event.
+        void handle_event_member_method(uint32_t event_id)
+        {
+            std::cout &lt;&lt; "C++ Class Instance " &lt;&lt; manager_instance_id_ 
+                      &lt;&lt; " successfully handled event ID: 0x" &lt;&lt; std::hex &lt;&lt; event_id &lt;&lt; std::dec &lt;&lt; "\n";
+        }
+
+    public:
+        // Constructor initializing manager instance ID.
+        explicit SensorEventHandlerManager(uint32_t identifier) : manager_instance_id_(identifier) 
+        {
+            std::cout &lt;&lt; "SensorEventHandlerManager constructor invoked for ID: " &lt;&lt; manager_instance_id_ &lt;&lt; "\n";
+        }
+
+        // Destructor cleaning up manager instance resources.
+        ~SensorEventHandlerManager(void)
+        {
+            std::cout &lt;&lt; "SensorEventHandlerManager destructor invoked for ID: " &lt;&lt; manager_instance_id_ &lt;&lt; "\n";
+        }
+
+        // Method to register this instance with the C system system.
+        void register_with_c_system(void)
+        {
+            // Pass 'this' as the user context pointer and the static trampoline method as the callback.
+            register_c_event_dispatcher(&SensorEventHandlerManager::handle_c_callback_trampoline, this);
+        }
+};
+
+int main(void)
+{
+    // Instantiate C++ event handler manager class.
+    SensorEventHandlerManager handler_instance(9988);
+
+    // Register instance with C system using trampoline callback.
+    handler_instance.register_with_c_system();
+
+    // Trigger event from C system side.
+    trigger_c_event(0xAA55BB66);
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.9 Additional Example 4: Custom Support Vector Machine Wrapped for C Access</h4>
+                <p>When custom C++ machine learning classifiers need to be exposed to legacy C modules, developers encapsulate the C++ classes inside an opaque C interface using <code>extern "C"</code>. Below are the complete files including the original C++ implementation alongside its C interoperability wrapper and pure C driver application:</p>
+
+                <p><strong>1. Header File (<code>include/support_vector_classifier.hpp</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-cpp p-3">/**
+ * @file        :   support_vector_classifier.hpp
+ * @author      :   Braiden Gole
+ * @brief       :   Interface declaration for the SupportVectorClassifier class.
+ * @details     :   Defines a soft-margin linear Support Vector Classifier trained using 
+ *                  Stochastic Gradient Descent (SGD) with hinge loss. Provides prototypes 
+ *                  for model initialization, hyperparameter accessors/mutators, single and 
+ *                  batch predictions, model training, and summary visualization.
+ * @version     :   1.0
+ * @date        :   2026-07-30
+ */
+#ifndef SUPPORT_VECTOR_CLASSIFIER_HPP
+#define SUPPORT_VECTOR_CLASSIFIER_HPP
+
+#include &lt;vector&gt;
+#include &lt;cstddef&gt;
+
+/**
+ * @class       :   SupportVectorClassifier
+ * @brief       :   A linear Support Vector Machine (SVM) binary classifier.
+ * @details     :   This class encapsulates weight coefficients, an intercept bias, and 
+ *                  optimization hyperparameters (learning rate, regularization penalty C, 
+ *                  and epoch iterations). It computes linear decision hyperplanes using 
+ *                  hinge loss minimization.
+ */
+class SupportVectorClassifier
+{
+    private:
+        std::vector&lt;double&gt; weight_coefficients;
+        double intercept_bias;
+
+        double learning_rate;
+        double regularization_penalty;
+
+        std::size_t maximum_iterations;
+    public:
+        // Constructors.
+        SupportVectorClassifier();
+        SupportVectorClassifier(double learning_rate, 
+            double regularization_penalty, std::size_t maximum_iterations);
+        
+        // Destructor.
+        ~SupportVectorClassifier() = default;
+
+        // Accessors.
+        double get_learning_rate() const;
+        const std::vector&lt;double&gt;& get_weight_coefficients() const;
+        double get_intercept_bias() const;
+        double get_regularization_penalty() const;
+        std::size_t get_maximum_iterations() const;
+
+        // Mutators.
+        void set_intercept_bias(double bias);
+        void set_learning_rate(double learning_rate);
+        void set_regularization_penalty(double regularization_penalty);
+        void set_maximum_iterations(std::size_t maximum_iterations);
+
+        // Methods.
+        double compute_decision_value(const std::vector&lt;double&gt;& sample) const;
+        int predict_class_label(const std::vector&lt;double&gt;& sample) const;
+        std::vector&lt;int&gt; predict_class_labels(const std::vector&lt;std::vector&lt;double&gt;&gt;& samples) const;
+
+        void train(const std::vector&lt;std::vector&lt;double&gt;&gt;& features, const std::vector&lt;int&gt;& labels);
+};
+
+// Function prototypes.
+void print_classifier_summary(const SupportVectorClassifier& classifier);
+
+#endif</code></pre>
+
+                <p><strong>2. Source File (<code>src/support_vector_classifier.cpp</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-cpp p-3">/**
+ * @file        :   support_vector_classifier.cpp
+ * @author      :   Braiden Gole
+ * @brief       :   Implementation of the SupportVectorClassifier class and associated utility functions.
+ * @details     :   Provides member definitions for training a soft-margin linear Support Vector Classifier
+ *                  using Stochastic Gradient Descent (SGD) with hinge loss, computing raw decision boundary
+ *                  scores, predicting discrete binary class labels, and querying classifier parameters.
+ * @version     :   1.0
+ * @date        :   2026-07-30
+ */
+#include &lt;iostream&gt;
+#include &lt;numeric&gt;
+#include &lt;stdexcept&gt;
+#include &lt;cmath&gt;
+
+// Include header files.
+#include "support_vector_classifier.hpp"
+
+/**
+ * @brief Default constructor initializing hyperparameter defaults.
+ */
+SupportVectorClassifier::SupportVectorClassifier()
+{   
+    set_intercept_bias(0.0);
+    set_learning_rate(0.001);
+    set_regularization_penalty(100.0);
+    set_maximum_iterations(10000);
+}
+
+/**
+ * @brief Parameterized constructor setting initial learning rate, regularization parameter, and max iterations.
+ * @param learning_rate Initial learning rate step size.
+ * @param regularization_penalty Regularization parameter C scaling hinge loss penalty vs margin size.
+ * @param maximum_iterations Maximum number of optimization epochs.
+ */
+SupportVectorClassifier::SupportVectorClassifier(double learning_rate, double regularization_penalty, std::size_t maximum_iterations)
+{
+    set_intercept_bias(0.0);
+    set_learning_rate(learning_rate);
+    set_regularization_penalty(regularization_penalty);
+    set_maximum_iterations(maximum_iterations);
+}
+
+// Accessors.
+
+/**
+ * @brief Retrieves the current learning rate step size.
+ * @return Learning rate value as a double.
+ */
+double SupportVectorClassifier::get_learning_rate() const
+{
+    return this-&gt;learning_rate;
+}
+
+/**
+ * @brief Retrieves the learned feature weight vector.
+ * @return Constant reference to vector of weight coefficients.
+ */
+const std::vector&lt;double&gt;& SupportVectorClassifier::get_weight_coefficients() const
+{
+    return this-&gt;weight_coefficients;
+}
+
+/**
+ * @brief Retrieves the learned intercept bias parameter.
+ * @return Intercept bias value as a double.
+ */
+double SupportVectorClassifier::get_intercept_bias() const
+{
+    return this-&gt;intercept_bias;
+}
+
+/**
+ * @brief Retrieves the regularization parameter C.
+ * @return Regularization penalty weight as a double.
+ */
+double SupportVectorClassifier::get_regularization_penalty() const
+{
+    return this-&gt;regularization_penalty;
+}
+
+/**
+ * @brief Retrieves the maximum number of optimization epoch iterations.
+ * @return Maximum iteration count.
+ */
+std::size_t SupportVectorClassifier::get_maximum_iterations() const
+{
+    return this-&gt;maximum_iterations;
+}
+
+// Mutators.
+
+/**
+ * @brief Sets the intercept bias offset parameter.
+ * @param bias New bias value.
+ */
+void SupportVectorClassifier::set_intercept_bias(double bias)
+{
+    if (!std::isfinite(bias))
+    {
+        throw std::invalid_argument("Intercept bias must be a finite numerical value.");
+    }
+
+    this-&gt;intercept_bias = bias;
+}
+
+/**
+ * @brief Sets the learning rate step size for gradient updates.
+ * @param learning_rate New learning rate double value.
+ */
+void SupportVectorClassifier::set_learning_rate(double learning_rate)
+{
+    if (!std::isfinite(learning_rate) || learning_rate &lt;= 0.0)
+    {
+        throw std::invalid_argument("Learning rate must be a finite positive double value strictly greater than 0.0.");
+    }
+
+    this-&gt;learning_rate = learning_rate;
+}
+
+/**
+ * @brief Sets the regularization penalty hyperparameter C.
+ * @param regularization_penalty Regularization magnitude.
+ */
+void SupportVectorClassifier::set_regularization_penalty(double regularization_penalty)
+{
+    if (!std::isfinite(regularization_penalty) || regularization_penalty &lt; 0.0)
+    {
+        throw std::invalid_argument("Regularization penalty must be a finite non-negative double value (&gt;= 0.0).");
+    }
+
+    this-&gt;regularization_penalty = regularization_penalty;
+}
+
+/**
+ * @brief Sets the maximum iteration steps for optimization loops.
+ * @param maximum_iterations Epoch count upper limit.
+ */
+void SupportVectorClassifier::set_maximum_iterations(std::size_t maximum_iterations)
+{
+    if (maximum_iterations &lt;= 0)
+    {
+        throw std::invalid_argument("Maximum iterations must be greater than zero.");
+    }
+    
+    this-&gt;maximum_iterations = maximum_iterations;
+}
+
+// Methods.
+
+/**
+ * @brief Computes the functional margin / signed decision distance for a single sample.
+ * @param sample Feature vector for query observation.
+ * @return Continuous raw decision score (dot product plus bias).
+ * @throws std::invalid_argument If sample dimension does not match weight coefficient vector dimension.
+ */
+double SupportVectorClassifier::compute_decision_value(const std::vector&lt;double&gt;& sample) const
+{
+    // Ensure the input sample dimension matches trained weight vector dimesion.
+    if (sample.size() != weight_coefficients.size())
+    {
+        throw std::invalid_argument("Input feature vector dimension does not align with trained weight coefficients.");
+    }
+
+    // Compute dot product between weight vector and input sample feature vector.
+    const double inner_feature_product = std::inner_product(sample.begin(), sample.end(), weight_coefficients.begin(), 0.0);
+
+    // Calculate signed decision score.
+    return inner_feature_product + this-&gt;intercept_bias;
+}
+
+/**
+ * @brief Predicts discrete binary target class label (-1 or +1) for a single sample.
+ * @param sample Feature vector for query observation.
+ * @return Integer target class prediction (-1 or +1).
+ */
+int SupportVectorClassifier::predict_class_label(const std::vector&lt;double&gt;& sample) const
+{
+    // Calculate raw continuous decision distance from separating hyperpalne.
+    const double raw_decision_score = compute_decision_value(sample);
+
+    // Map positive decision distance to class +1, otherwise map to class -1.
+    return raw_decision_score &gt;= 0.0 ? 1 : -1;
+}
+
+/**
+ * @brief Predicts discrete binary target class labels for a dataset matrix of samples.
+ * @param samples Matrix of input observations (rows as samples, columns as features).
+ * @return Vector of integer predicted class labels (-1 or +1).
+ */
+std::vector&lt;int&gt; SupportVectorClassifier::predict_class_labels(const std::vector&lt;std::vector&lt;double&gt;&gt;& samples) const
+{
+    std::vector&lt;int&gt; predicted_class_labels;
+
+    // Pre-allocated vector memory to prevent dynamic re-allocations during iteration.
+    predicted_class_labels.reserve(samples.size());
+
+    // Iterate over each observation in dataset and predict its class label.
+    for (const auto& individual : samples)
+    {
+        predicted_class_labels.push_back(predict_class_label(individual));
+    }
+
+    return predicted_class_labels;
+}
+
+/**
+ * @brief Fits the linear decision boundary to training data via SGD with Hinge Loss.
+ * @param features 2D matrix of training observations.
+ * @param labels Vector of target binary class labels (-1 or +1).
+ * @throws std::invalid_argument If feature dataset or labels are empty, or if sample/label lengths mismatch.
+ */
+void SupportVectorClassifier::train(const std::vector&lt;std::vector&lt;double&gt;&gt;& features, const std::vector&lt;int&gt;& labels)
+{
+    // Guard against empty datasets.
+    if (features.empty() || labels.empty())
+    {
+        throw std::invalid_argument("Training feature dataset and target labels must not be empty.");
+    }
+
+    // Ensure sample count matches target label count.
+    if (features.size() != labels.size())
+    {
+        throw std::invalid_argument("Dimension mismatch between feature observations and target labels.");
+    }
+
+    const std::size_t total_observations = features.size();
+    const std::size_t feature_dimension_count = features[0].size();
+
+    // Initialize all model weight coefficients to zero.
+    this-&gt;weight_coefficients.assign(feature_dimension_count, 0.0);
+    this-&gt;intercept_bias = 0.0;
+
+    // Main optimization loop running for specified epoch count.
+    for (std::size_t step = 0; step &lt; this-&gt;maximum_iterations; step++)
+    {
+        // Stochastic gradient descent: Iterate through each sample sequentially.
+        for (std::size_t observation_index = 0; observation_index &lt; total_observations; observation_index++)
+        {
+            const std::vector&lt;double&gt;& current_feature = features[observation_index];
+            const int current_target_label = labels[observation_index];
+
+            // Compute hyperplane dot product.
+            const double hyperplane_dot_product = std::inner_product(current_feature.begin(), 
+                current_feature.end(), weight_coefficients.begin(), 0.0);
+
+            // Compute functional margin conditions.
+            const double margin_value = current_target_label * (hyperplane_dot_product + this-&gt;intercept_bias);
+
+            if (margin_value &gt;= 1.0)
+            {
+                // Correctly classified outside margin: Apply standard L2 regularization weight decay.
+                for (std::size_t feature_index = 0; feature_index &lt; feature_dimension_count; feature_index++)
+                {
+                    const double regularization_gradient = this-&gt;weight_coefficients[feature_index] / static_cast&lt;double&gt;(this-&gt;maximum_iterations);
+
+                    this-&gt;weight_coefficients[feature_index] -= this-&gt;learning_rate * regularization_gradient;
+                }
+            }
+            else
+            {
+                // Misclassified or inside margin: Update weights using hinge loss penalty gradient.
+                for (std::size_t feature_index = 0; feature_index &lt; feature_dimension_count; feature_index++)
+                {
+                    const double regularization_gradient = this-&gt;weight_coefficients[feature_index] / static_cast&lt;double&gt;(this-&gt;maximum_iterations);
+                    const double hinge_loss_gradient = this-&gt;regularization_penalty * current_target_label * current_feature[feature_index];
+
+                    this-&gt;weight_coefficients[feature_index] -= this-&gt;learning_rate * (regularization_gradient - hinge_loss_gradient);
+                }
+
+                // Update intercept bias using hinge loss.
+                this-&gt;intercept_bias += this-&gt;learning_rate * this-&gt;regularization_penalty * current_target_label;
+            }
+        }
+    }
+}
+
+// Utilities.
+
+/**
+ * @brief Prints formatted parameters, weights, bias, and hyperparameters of a classifier to std::cout.
+ * @param classifier Reference to SupportVectorClassifier instance to print.
+ */
+void print_classifier_summary(const SupportVectorClassifier& classifier)
+{
+    std::cout &lt;&lt; "-- Support Vector Classifier --" &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Weight Coefficients: [";
+
+    std::size_t size = classifier.get_weight_coefficients().size();
+
+    std::size_t count = 0;
+    
+    // Print weight array values with proper spacing and formatting.
+    for (double weight : classifier.get_weight_coefficients())
+    {   
+        if (count &lt; size - 1)
+        {
+            std::cout &lt;&lt; weight &lt;&lt; " ";
+        }
+        else
+        {
+            std::cout &lt;&lt; weight;
+        }
+
+        count++;
+    }
+
+    std::cout &lt;&lt; "]" &lt;&lt; std::endl;
+
+    std::cout &lt;&lt; "Intercept Bias: " &lt;&lt; classifier.get_intercept_bias() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Learning Rate: " &lt;&lt; classifier.get_learning_rate() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Regularization penalty: " &lt;&lt; classifier.get_regularization_penalty() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "Maximum iterations: " &lt;&lt; classifier.get_maximum_iterations() &lt;&lt; std::endl;
+    std::cout &lt;&lt; "-------------------------------" &lt;&lt; std::endl;
+}</code></pre>
+
+                <p><strong>3. C Wrapper Header File (<code>include/svm_c_wrapper.h</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">/**
+ * @file        :   svm_c_wrapper.h
+ * @author      :   Braiden Gole
+ * @brief       :   C-compatible opaque handle interface for the Support Vector Classifier.
+ * @details     :   Provides C function prototypes and an opaque pointer handle to allow 
+ *                  pure C codebases to instantiate, train, and execute inference using the 
+ *                  underlying C++ SupportVectorClassifier class.
+ * @version     :   1.0
+ * @date        :   2026-07-30
+ */
+#ifndef SVM_C_WRAPPER_H
+#define SVM_C_WRAPPER_H
+
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;stddef.h&gt;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Forward declaration of opaque handle representing the C++ classifier instance.
+typedef struct SupportVectorClassifierContext svm_classifier_context_t;
+
+// Lifecycle management functions.
+svm_classifier_context_t* svm_classifier_create(double learning_rate, double regularization_penalty, size_t maximum_iterations);
+void svm_classifier_destroy(svm_classifier_context_t* context);
+
+// Training function accepting flat C arrays for features and target labels.
+bool svm_classifier_train(svm_classifier_context_t* context, 
+                          const double* flat_features_pointer, 
+                          const int* labels_pointer, 
+                          size_t observation_count, 
+                          size_t dimension);
+
+// Prediction function for a single sample observation.
+int svm_classifier_predict(svm_classifier_context_t* context, 
+                           const double* features, 
+                           size_t dimension);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif</code></pre>
+
+                <p><strong>4. C Wrapper Source File (<code>src/svm_c_wrapper.cpp</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-cpp p-3">/**
+ * @file        :   svm_c_wrapper.cpp
+ * @author      :   Braiden Gole
+ * @brief       :   Implementation of C linkage wrapper functions wrapping the SupportVectorClassifier class.
+ * @details     :   Translates C-style flat pointers and error codes into C++ objects and exceptions,
+ *                  providing an ABI-safe bridge for C applications to interface with the SGD-trained SVM.
+ * @version     :   1.0
+ * @date        :   2026-07-30
+ */
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include &lt;stdexcept&gt;
+
+// Include the C++ class header and C wrapper header.
+#include "support_vector_classifier.hpp"
+#include "svm_c_wrapper.h"
+
+// Define the concrete internal structure mapping the opaque C handle to the C++ class.
+struct SupportVectorClassifierContext 
+{
+    SupportVectorClassifier classifier;
+
+    // Parameterized constructor initializing the underlying classifier.
+    SupportVectorClassifierContext(double learning_rate, double regularization_penalty, size_t maximum_iterations)
+        : classifier(learning_rate, regularization_penalty, maximum_iterations) {}
+};
+
+// Enforce C-compatible linkage implementation blocks.
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+svm_classifier_context_t* svm_classifier_create(double learning_rate, double regularization_penalty, size_t maximum_iterations)
+{
+    try
+    {
+        // Allocate heap memory for the wrapped C++ classifier context instance.
+        return new svm_classifier_context_t(learning_rate, regularization_penalty, maximum_iterations);
+    }
+    catch (const std::exception& exception_reference)
+    {
+        std::cerr &lt;&lt; "Error allocating SVM classifier context: " &lt;&lt; exception_reference.what() &lt;&lt; "\n";
+
+        return nullptr;
+    }
+}
+
+void svm_classifier_destroy(svm_classifier_context_t* context)
+{
+    if (context != nullptr)
+    {
+        // Safely reclaim heap memory and invoke destructor.
+        delete context;
+    }
+}
+
+bool svm_classifier_train(svm_classifier_context_t* context, 
+                          const double* flat_features_pointer, 
+                          const int* labels_pointer, 
+                          size_t observation_count, 
+                          size_t dimension)
+{
+    if (context == nullptr || flat_features_pointer == nullptr || labels_pointer == nullptr)
+    {
+        std::cerr &lt;&lt; "Error: Received null pointer reference in svm_classifier_train.\n";
+
+        return false;
+    }
+
+    try
+    {
+        // Reshape flat C array into C++ 2D vector matrix format.
+        std::vector&lt;std::vector&lt;double&gt;&gt; training_features(observation_count, std::vector&lt;double&gt;(dimension));
+
+        for (size_t row = 0; row &lt; observation_count; row++)
+        {
+            for (size_t column = 0; column &lt; dimension; column++)
+            {
+                training_features[row][column] = flat_features_pointer[row * dimension + column];
+            }
+        }
+
+        // Reshape target label array into C++ vector format.
+        std::vector&lt;int&gt; labels(labels_pointer, labels_pointer + observation_count);
+
+        // Execute training on the underlying C++ classifier instance.
+        context-&gt;classifier.train(training_features, labels);
+
+        return true;
+    }
+    catch (const std::exception& exception_reference)
+    {
+        std::cerr &lt;&lt; "Exception caught during SVM training across C boundary: " &lt;&lt; exception_reference.what() &lt;&lt; "\n";
+        return false;
+    }
+}
+
+int svm_classifier_predict(svm_classifier_context_t* context, const double* features, size_t dimension)
+{
+    if (context == nullptr || features == nullptr)
+    {
+        std::cerr &lt;&lt; "Error: Received null pointer reference in svm_classifier_predict.\n";
+
+        return -999;
+    }
+
+    try
+    {
+        // Convert flat C sample array into C++ vector format.
+        std::vector&lt;double&gt; query_sample(features, features + dimension);
+
+        // Execute prediction using underlying C++ classifier instance.
+        return context-&gt;classifier.predict_class_label(query_sample);
+    }
+    catch (const std::exception& exception_reference)
+    {
+        std::cerr &lt;&lt; "Exception caught during SVM prediction across C boundary: " &lt;&lt; exception_reference.what() &lt;&lt; "\n";
+
+        return -999;
+    }
+}
+
+#ifdef __cplusplus
+}
+#endif</code></pre>
+
+                <p><strong>5. Pure C Driver File (<code>src/main_c_driver.c</code>):</strong></p>
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">/**
+ * @file        :   main.cpp
+ * @author      :   Braiden Gole
+ * @brief       :   Driver script demonstrating training and evaluation of a Support Vector Classifier.
+ * @details     :   This program instantiates a linear Support Vector Classifier, trains it on a 2D 
+ *                  toy dataset using Stochastic Gradient Descent (SGD) with hinge loss, and outputs 
+ *                  the learned model parameters (weights and bias) alongside its hyperparameter summary.
+ * Compile:
+ * clang++ -Wall -Wextra -Wpedantic ./src/main.cpp ./src/support_vector_classifier.cpp -I./include -o ./bin/support_vector_test
+ * @version     :   1.0
+ * @date        :   2026-07-30
+ */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Include the C-compatible wrapper header.
+#include "svm_c_wrapper.h"
+
+int main(void)
+{
+    printf("Starting Pure C Application Driver for C++ SVM Interoperability...\n");
+
+    // Define dimensions and training dataset parameters.
+    size_t observation_count = 6;
+    size_t dimension = 2;
+
+    // Flatten 2D feature observations into a continuous 1D C array.
+    double features[] = 
+    {
+        2.0, 3.0,
+        1.0, 1.0,
+        2.0, 1.0,
+        8.0, 9.0,
+        7.0, 8.0,
+        9.0, 7.0
+    };
+
+    // Define target binary class labels.
+    int labels[] = {-1, -1, -1, 1, 1, 1};
+
+    // 1. Create classifier instance via C wrapper function (opaque handle).
+    svm_classifier_context_t* svm_model = svm_classifier_create(0.001, 100.0, 10000);
+
+    if (svm_model == NULL)
+    {
+        fprintf(stderr, "Error: Failed to create SVM classifier instance.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // 2. Train model using flat C pointers.
+    bool training_success = svm_classifier_train(svm_model, features, labels, observation_count, dimension);
+
+    if (!training_success)
+    {
+        fprintf(stderr, "Error: SVM model training failed.\n");
+
+        svm_classifier_destroy(svm_model);
+
+        return EXIT_FAILURE;
+    }
+
+    printf("SVM Model successfully trained from C driver application!\n");
+
+    // 3. Test predictions on new query samples from C.
+    double alpha[] = {1.5, 2.0};
+    double beta[]  = {8.5, 8.0};
+
+    int prediction_alpha = svm_classifier_predict(svm_model, alpha, dimension);
+    int prediction_beta  = svm_classifier_predict(svm_model, beta, dimension);
+
+    printf("Prediction for Test Sample A [1.5, 2.0] -> Class Label: %d\n", prediction_alpha);
+    printf("Prediction for Test Sample B [8.5, 8.0] -> Class Label: %d\n", prediction_beta);
+
+    // 4. Safely destroy model instance and reclaim resources.
+    svm_classifier_destroy(svm_model);
+
+    svm_model = NULL;
+
+    printf("C interoperability execution completed successfully.\n");
+
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">17.10 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Always wrap C library header declarations in <code>extern "C" { ... }</code> blocks conditioned on <code>__cplusplus</code> to prevent linker errors caused by name mangling.</li>
+                    <li class="mb-2">Ensure data structures shared across C and C++ modules adhere strictly to Plain Old Data (POD) layouts and matching alignment rules.</li>
+                    <li class="mb-2">Validate all configuration pointers and function pointer callbacks defensively against <code>NULL</code> across language boundaries.</li>
+                    <li class="mb-2">Compile multi-language projects by compiling C and C++ source files with their respective compilers (<code>gcc</code> / <code>clang</code> vs <code>g++</code> / <code>clang++</code>) and linking them together into a unified binary.</li>
+                    <li class="mb-2">Use opaque pointer handles for strict encapsulation, implement C++ exception translation boundaries to prevent uncaught exceptions across C call stacks, and leverage RAII for leak-proof resource management.</li>
+                </ul>
+
+                <hr>
+
+                <div class="text-center">
+                    <h4 class="fw-bold mt-4 mb-3 chapter-title">Code Examples in C</h4>
+                    <p>Explore the complete C repository on my website.</p>
+                    <a href="https://braiden-gole.github.io" class="d-block text-decoration-none">🌐 C Repository by Braiden Gole</a>
+                </div>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_16.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Data Structure & Algorithms
+                </a>
+                <a href="../index.html" class="btn btn-primary btn-sm">
+                    Finished <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

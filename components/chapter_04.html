@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 4: Functions, Call Stack Mechanics & Storage Classes - C Unlocked by Braiden Gole." />
+        <meta name="author" content="Braiden Gole" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, pointers, and memory management by Braiden Gole." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 4: Functions &amp; Storage Classes | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 4: Functions, Call Stack Mechanics &amp; Storage Classes</h2>
+
+                <div class="lead mb-4">
+                    Functions represent the modular building blocks of C systems architecture. Understanding how function frames interact with the hardware call stack and how storage class specifiers manage variable lifetimes is critical for writing bulletproof code.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">4.1 Function Prototypes &amp; Compilation Linkage</h4>
+                <p>In C, the compiler processes files from top to bottom. If a function is called before its full implementation body appears in the source file, the compiler must encounter a <strong>function prototype</strong> beforehand. Prototypes declare the function's return type, parameter types, and calling convention, enabling strict type checking during compilation.</p>
+                
+                <p>Conversely, if you define the full function body above <code>main()</code>, the compiler parses its complete signature prior to invocation, implicitly serving as its own prototype without requiring a separate declaration. The following systems utility demonstrates a helper function defined above <code>main()</code> that calculates packet checksum bounds defensively:</p>
+
+                <!-- Function Defined Before Main C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+
+// Function fully defined before main(); acts as its own implicit prototype.
+uint32_t calculate_checksum(const uint8_t* packet_payload, size_t length)
+{
+    // Validate pointer integrity before processing stream bytes defensively.
+    if (packet_payload == NULL)
+    {
+        fprintf(stderr, "Error: Received null pointer during checksum generation.\n");
+
+        return 0;
+    }
+
+    // Initialize accumulator variable for summation.
+    uint32_t checksum = 0;
+
+    // Iterate through each byte in the payload array.
+    for (size_t payload_index = 0; payload_index < length; payload_index++)
+    {
+        // Accumulate byte value into checksum total.
+        checksum += packet_payload[payload_index];
+    }
+
+    // Return computed checksum value.
+    return checksum;
+}
+
+int main(void)
+{
+    // Declare sample telemetry packet payload array.
+    uint8_t transmission_packets[] = {0x10, 0x20, 0x30, 0x40, 0x50};
+    
+    // Calculate total element count of transmission array defensively.
+    size_t length = sizeof(transmission_packets) / sizeof(transmission_packets[0]);
+
+    // Invoke helper function to generate packet checksum.
+    uint32_t final_checksum = calculate_checksum(transmission_packets, length);
+    
+    // Safely print telemetry results and capture write status.
+    int status = printf("Successfully validated packet checksum: 0x%08X\n", final_checksum);
+
+    // Verify successful write operation to standard output stream.
+    if (status < 0)
+    {
+        fprintf(stderr, "Error: Failed to write standard output stream.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // Return successful execution status.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">4.2 The Call Stack &amp; Activation Records</h4>
+                <p>Every time a function is invoked, the CPU allocates a new stack frame (or activation record) on the call stack. This frame stores function parameters, automatic local variables, and the return instruction pointer.</p>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">4.3 Storage Class Specifiers</h4>
+                <p>C provides storage class keywords that dictate a variable's <strong>lifetime</strong>, <strong>scope</strong>, and <strong>storage location</strong>:</p>
+                <ul class="mb-4">
+                    <li class="mb-2"><strong><code>auto</code>:</strong> The default for local variables. Storage is allocated on the stack when the block scope is entered and destroyed upon exit.</li>
+                    <li class="mb-2"><strong><code>static</code>:</strong> When applied to a local variable, it preserves its value across function calls and stores it in the data segment rather than the stack. When applied to global variables or functions, it restricts their linkage strictly to the current translation unit (file scope).</li>
+                    <li class="mb-2"><strong><code>extern</code>:</strong> Declares that a variable or function is defined in another translation unit, allowing global sharing across multiple source files.</li>
+                </ul>
+
+                <p>The following systems demonstration implements a thread-safe invocation rate limiter using a <code>static</code> atomic variable and an atomic compare-and-swap (CAS) loop (via <code>&lt;stdatomic.h&gt;</code>) to prevent race conditions during concurrent telemetry tracking:</p>
+
+                <!-- Static Storage Class C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;stdatomic.h&gt;
+
+// Function prototype enforcing strict parameter contracts.
+bool evaluate_rate_limiter_threshold(size_t maximum_allowed_invocations);
+
+int main(void)
+{
+    // Define immutable threshold boundary for burst simulation.
+    const size_t maximum_burst_limit = 3;
+
+    // Simulate burst traffic loop against the rate limiter.
+    for (size_t simulation_tick = 1; simulation_tick &lt;= 5; simulation_tick++)
+    {
+        // Evaluate current request against rate limiter rules.
+        bool is_request_permitted = evaluate_rate_limiter_threshold(maximum_burst_limit);
+
+        // Handle authorized request outcome.
+        if (is_request_permitted)
+        {
+            printf("Tick %zu: Request approved by telemetry rate limiter.\n", simulation_tick);
+        } 
+        else
+        {
+            // Handle throttled request outcome.
+            printf("Tick %zu: Request throttled due to rate-limit violation.\n", simulation_tick);
+        }
+    }
+
+    // Return successful execution exit status.
+    return EXIT_SUCCESS;
+}
+
+bool evaluate_rate_limiter_threshold(size_t maximum_invocations)
+{
+    // Static atomic variable persists across stack frame destructions in the data segment.
+    static atomic_size_t request_counter = 0;
+
+    // Load current atomic request count value thread-safely.
+    size_t current_count = atomic_load(&request_counter);
+
+    // Use a lock-free compare-and-swap loop to prevent check-then-act race conditions.
+    while (true) 
+    {
+        // Check if limit has been reached or exceeded.
+        if (current_count &gt;= maximum_invocations)
+        {
+            // Throttled.
+            return false;
+        }
+
+        // Attempt atomic increment via compare-and-swap operation.
+        if (atomic_compare_exchange_weak(&request_counter, &current_count, current_count + 1))
+        {
+            // Permitted.
+            return true;
+        }
+    }
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">4.4 Advanced Concurrency Primitives &amp; Synchronization</h4>
+                <p>While atomic operations and mutexes form the bedrock of multi-threading, modern systems programming provides several specialized synchronization primitives to handle complex concurrency patterns efficiently:</p>
+                <ul class="mb-4">
+                    <li class="mb-2"><strong>Condition Variables (<code>cnd_t</code> / <code>pthread_cond_t</code>):</strong> Enable threads to sleep efficiently while waiting for a specific state change, eliminating wasteful CPU-burning busy-wait loops. Always paired with a mutex.</li>
+                    <li class="mb-2"><strong>Read-Write Locks (<code>pthread_rwlock_t</code>):</strong> Split access into shared (read) and exclusive (write) modes. Multiple threads can read concurrently, while writes require solitary access—ideal for read-heavy caches and lookup tables.</li>
+                    <li class="mb-2"><strong>Spinlocks (<code>pthread_spinlock_t</code>):</strong> Rather than putting waiting threads to sleep (avoiding context-switch overhead), spinlocks continuously poll the lock in a tight CPU loop. Best for extremely brief critical sections.</li>
+                    <li class="mb-2"><strong>Counting Semaphores (<code>sem_t</code>):</strong> Maintained by an integer counter rather than a binary state, allowing up to $N$ concurrent threads to access a limited resource pool.</li>
+                    <li class="mb-2"><strong>Thread-Local Storage (<code>_Thread_local</code>):</strong> Gives every thread its own private, isolated copy of a global or static variable, eliminating sharing overhead for states like error codes or random generators.</li>
+                    <li class="mb-2"><strong>Barriers (<code>pthread_barrier_t</code>):</strong> Coordinates teams of threads by forcing them to halt at a synchronization checkpoint until all participating threads arrive before resuming simultaneously.</li>
+                </ul>
+
+                <p>The following intricate systems demonstration implements a multi-threaded worker synchronization pipeline utilizing POSIX condition variables and mutexes to coordinate background task execution safely:</p>
+
+                <!-- Advanced Concurrency Synchronization C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;unistd.h&gt;
+
+// Define a shared synchronization context structure for worker coordination.
+typedef struct 
+{
+    pthread_mutex_t lock;
+    pthread_cond_t condition;
+    bool is_ready;
+    int32_t payload_id;
+} worker_coordination_context_t;
+
+// Thread routine for the background worker thread.
+static void* background_worker_routine(void* context)
+{
+    // Validate that the context pointer is non-null defensively.
+    if (context == NULL)
+    {
+        fprintf(stderr, "Error: Worker routine received null context pointer.\n");
+
+        return NULL;
+    }
+
+    // Cast generic void pointer to strongly-typed coordination record.
+    worker_coordination_context_t* context_record = (worker_coordination_context_t*)context;
+
+    // Acquire mutex lock before inspecting shared coordination state.
+    pthread_mutex_lock(&context_record->lock);
+
+    // Wait efficiently on condition variable until the coordinator signals readiness.
+    while (!context_record->is_ready)
+    {
+        pthread_cond_wait(&context_record->condition, &context_record->lock);
+    }
+
+    // Print notification indicating successful task payload processing.
+    printf("[Background Worker]: Received task payload identifier: %d\n", context_record->payload_id);
+
+    // Release mutex lock.
+    pthread_mutex_unlock(&context_record->lock);
+
+    // Return null pointer upon routine completion.
+    return NULL;
+}
+
+int main(void)
+{
+    // Output diagnostic header for pipeline initialization.
+    printf("=== Initializing Condition Variable Worker Pipeline ===\n\n");
+
+    // Initialize coordination context structure with default values.
+    worker_coordination_context_t coordination_context =
+    {
+        .is_ready = false,
+        .payload_id = 0
+    };
+
+    // Initialize mutex and condition variable dynamically and verify success.
+    if (pthread_mutex_init(&coordination_context.lock, NULL) != 0 ||
+        pthread_cond_init(&coordination_context.condition, NULL) != 0)
+    {
+        fprintf(stderr, "Error: Failed to initialize synchronization primitives.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    pthread_t worker_thread_identifier;
+
+    // Spawn background worker thread and verify successful creation.
+    if (pthread_create(&worker_thread_identifier, NULL, background_worker_routine, (void*)&coordination_context) != 0)
+    {
+        fprintf(stderr, "Error: Failed to spawn background worker thread.\n");
+
+        pthread_mutex_destroy(&coordination_context.lock);
+        pthread_cond_destroy(&coordination_context.condition);
+
+        return EXIT_FAILURE;
+    }
+
+    // Halt execution briefly to simulate coordinator preparation phase.
+    sleep(1);
+
+    // Acquire mutex, update shared state, and signal worker thread via condition variable.
+    pthread_mutex_lock(&coordination_context.lock);
+    
+    coordination_context.is_ready = true;
+    coordination_context.payload_id = 7007;
+
+    printf("[Main Coordinator]: Task queue populated. Signaling worker thread...\n");
+    
+    pthread_cond_signal(&coordination_context.condition);
+    
+    pthread_mutex_unlock(&coordination_context.lock);
+
+    // Join background worker thread upon execution completion.
+    pthread_join(worker_thread_identifier, NULL);
+
+    // Release allocated synchronization resources securely.
+    pthread_mutex_destroy(&coordination_context.lock);
+    pthread_cond_destroy(&coordination_context.condition);
+
+    // Output completion message upon pipeline termination.
+    printf("\nWorker synchronization pipeline completed successfully.\n");
+
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">4.5 The <code>const</code> Qualifier &amp; Read-Only Contracts</h4>
+                <p>The <code>const</code> keyword is a compile-time enforcement mechanism that tells both the compiler and fellow developers that a variable's value or memory buffer must not be modified after initialization. If any code attempts to write to a <code>const</code>-qualified variable or pointer target, the compiler halts with a compilation error.</p>
+                <p>When to use <code>const</code> in systems programming:</p>
+                <ul class="mb-4">
+                    <li class="mb-2"><strong>Read-Only Pointer Parameters:</strong> As seen in <code>const uint8_t *packet_payload</code>, qualifying pointer targets guarantees that a function can read the input buffer without accidentally mutating or corrupting the caller's memory.</li>
+                    <li class="mb-2"><strong>Configuration Constants:</strong> Use <code>const size_t maximum_burst_limit = 3;</code> instead of preprocessor macros (<code>#define</code>) to preserve lexical scope and strict type safety.</li>
+                    <li class="mb-2"><strong>Self-Documenting APIs:</strong> Marking parameters as <code>const</code> communicates clear design intent regarding data ownership and mutation permissions across translation units.</li>
+                </ul>
+
+                <p>Notice the dual-qualification pattern used in advanced function parameters such as <code>const uint8_t *const telemetry_input_stream</code>. The leftmost <code>const</code> protects the <strong>underlying data</strong> (preventing byte mutation through the pointer), while the rightmost <code>const</code> (placed right after the asterisk) creates a <strong>constant pointer</strong>—locking the pointer variable itself so it cannot be reassigned to point to a different address inside the function body. This dual enforcement provides complete structural immutability.</p>
+                
+                <p>The following intricate systems demonstration showcases advanced <code>const</code> correctness—utilizing pointer-to-constant input buffers, constant pointer destinations, and read-only configuration records:</p>
+
+                <!-- Intricate Const Correctness C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Define an immutable configuration structure for hardware telemetry.
+typedef struct 
+{
+    const uint32_t hardware_device_id;
+    const size_t maximum_operational_bandwidth;
+} hardware_configuration_t;
+
+// Function taking a pointer to constant data (data cannot be modified through pointer).
+bool validate_telemetry_stream(const uint8_t* const stream, size_t length, const hardware_configuration_t *const configurations)
+{
+    // Validate pointer boundaries defensively.
+    if (stream == NULL || configurations == NULL)
+    {
+        fprintf(stderr, "Error: Received null pointer in telemetry validation routine.\n");
+        
+        return false;
+    }
+
+    // Verify stream length does not exceed maximum operational bandwidth.
+    if (length &gt; configurations-&gt;maximum_operational_bandwidth)
+    {
+        fprintf(stderr, "Error: Stream length %zu exceeds maximum bandwidth %zu.\n", 
+                length, configurations-&gt;maximum_operational_bandwidth);
+
+        return false;
+    }
+
+    // Initialize running checksum accumulator variable.
+    uint32_t calculated_stream_checksum = 0;
+
+    // Iterate through each byte in the telemetry buffer sequentially.
+    for (size_t stream_index = 0; stream_index &lt; length; stream_index++)
+    {
+        // Read-only access: telemetry stream bytes can be read but not assigned.
+        calculated_stream_checksum += stream[stream_index];
+    }
+
+    // Log successful validation details including hardware identifier and checksum.
+    printf("Telemetry validation passed for Device ID: 0x%08X | Checksum: 0x%08X\n", 
+           configurations-&gt;hardware_device_id, calculated_stream_checksum);
+
+    return true;
+}
+
+int main(void)
+{
+    // Instantiate read-only hardware configuration structure.
+    const hardware_configuration_t configurations = 
+    {
+        .hardware_device_id = 0xDEADBEEF,
+        .maximum_operational_bandwidth = 1024
+    };
+
+    // Declare read-only sensor telemetry buffer data array.
+    const uint8_t sensor_telemetry_buffer[] = {0x01, 0x02, 0x04, 0x08, 0x10};
+
+    // Calculate total element count of sensor telemetry buffer.
+    size_t sensor_telemetry_element_count = sizeof(sensor_telemetry_buffer) / sizeof(sensor_telemetry_buffer[0]);
+
+    // Invoke validation routine honoring const contracts.
+    bool is_valid = validate_telemetry_stream(sensor_telemetry_buffer, sensor_telemetry_element_count, &amp;configurations);
+
+    // Check validation result and handle critical failure gracefully.
+    if (!is_valid)
+    {
+        fprintf(stderr, "Critical: Telemetry stream validation failed.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // Return successful execution status.
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">4.6 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Always provide function prototypes before invocation (or define functions above main) to ensure compiler type-safety checks catch mismatch errors.</li>
+                    <li class="mb-2">Be aware of stack depth limitations when designing recursive functions to prevent stack overflow faults.</li>
+                    <li class="mb-2">Use <code>static</code> storage specifiers carefully for local state persistence without polluting global namespaces.</li>
+                    <li class="mb-2">Qualify input pointer parameters with <code>const</code> to enforce read-only safety guarantees and prevent accidental memory corruption.</li>
+                    <li class="mb-2">Ensure all pointers returned from functions point to valid heap or static allocations rather than destroyed local stack frames.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_03.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Control Flow
+                </a>
+                <a href="chapter_05.html" class="btn btn-primary btn-sm">
+                    Pointers &amp; Memory <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

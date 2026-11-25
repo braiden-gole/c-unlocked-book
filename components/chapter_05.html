@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 5: Pointers, Memory Addresses & Address-of Operators - C Unlocked by Braiden Gole." />
+        <meta name="author" content="Braiden Gole" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, pointers, and memory management by Braiden Gole." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 5: Pointers &amp; Memory Addresses | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 5: Pointers, Memory Addresses &amp; Address-of Operators</h2>
+                <div class="lead mb-4">
+                    Pointers represent the foundational mechanism that gives C its raw systems-level power. By explicitly manipulating memory addresses, pointers allow high-efficiency data handling, direct hardware interaction, and reference-based function arguments.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">5.0 Initializing Pointers &amp; Defending Against Wild Pointers</h4>
+                <p>Before working with memory addresses or dereferencing operations, one vital rule governs reliable C programming: <strong>always initialize your pointer variables to <code>NULL</code></strong> if you do not assign them a valid memory address upon declaration.</p>
+                <p>In C, uninitialized local variables contain whatever random garbage data happens to reside in that stack memory slot. If an uninitialized pointer is used, it acts as a <em>wild pointer</em>, treating that random garbage as a physical memory address. Attempting to read or write to a wild pointer results in undefined behavior, immediate segmentation faults, or silent data corruption.</p>
+                <p>Initializing a pointer to <code>NULL</code> explicitly flags it as pointing to "nothing," allowing you to construct defensive runtime checks before using or freeing it. Furthermore, C guarantees that passing a <code>NULL</code> pointer to the <code>free()</code> function is a safe no-op that does nothing, protecting your program from catastrophic crashes during cleanup routines.</p>
+                <p>The following systems code demonstrates the stark contrast between uninitialized stack hazards and proper initialization routines:</p>
+
+                <!-- Pointer Initialization & Wild Pointer C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+int main(void)
+{
+    // Danger: Uninitialized local pointer holds stack garbage (wild pointer hazard).
+    // int32_t* uninitialized_hazard_pointer;
+
+    // Correct practice: Initialize pointer variables to NULL immediately upon declaration.
+    int32_t* safe_sensor_pointer = NULL;
+    int32_t hardware_register_value = 0x1A2B3C4D;
+
+    if (safe_sensor_pointer == NULL)
+    {
+        printf("Safe pointer check: Pointer is currently null and safe from wild dereferencing.\n");
+    }
+
+    // Bind the safe pointer to a valid variable address.
+    safe_sensor_pointer = &amp;hardware_register_value;
+
+    if (safe_sensor_pointer != NULL)
+    {
+        printf("Bound pointer target value: 0x%08X\n", *safe_sensor_pointer);
+    }
+
+    // Reassign pointer back to NULL before leaving scope or freeing.
+    safe_sensor_pointer = NULL;
+
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">5.1 Memory Addresses &amp; The Address-Of Operator (<code>&amp;</code>)</h4>
+                <p>Every variable declared in a C program resides in physical or virtual RAM. A memory address is a numeric value representing the byte location where that variable's data begins. In C, you retrieve the memory address of any variable by applying the unary <strong>address-of operator</strong> (<code>&amp;</code>).</p>
+                <p>Pointer variables are specialized variables designed specifically to store these memory addresses rather than raw data values. Their type declaration (e.g., <code>uint32_t *</code>) tells the compiler both that the variable holds an address and how many bytes of data reside at that target location.</p>
+                <p>The following systems demonstration illustrates capturing memory addresses across different scalar data types and verifying their distinct byte footprints:</p>
+
+                <!-- Memory Addresses & Address-Of Operator C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+
+int main(void)
+{
+    uint8_t telemetry_flag = 0x01;
+    uint16_t sensor_voltage_code = 2048;
+    uint32_t network_packet_identifier = 0xDEADBEEF;
+    uint64_t timestamp_epoch_counter = 1718000000ULL;
+
+    // Capture memory addresses using the address-of operator (&).
+    uint8_t* flag_address_pointer = &amp;telemetry_flag;
+    uint16_t* voltage_address_pointer = &amp;sensor_voltage_code;
+    uint32_t* identifier_address_pointer = &amp;network_packet_identifier;
+    uint64_t* timestamp_address_pointer = &amp;timestamp_epoch_counter;
+
+    printf("--- Memory Address Inspection Report ---\n");
+    printf("Telemetry Flag Value: 0x%02X | Address: %p | Size: %zu byte(s)\n", 
+           telemetry_flag, (void*)flag_address_pointer, sizeof(telemetry_flag));
+
+    printf("Sensor Voltage Value: %u      | Address: %p | Size: %zu byte(s)\n", 
+           sensor_voltage_code, (void*)voltage_address_pointer, sizeof(sensor_voltage_code));
+
+    printf("Packet ID Value     : 0x%08X | Address: %p | Size: %zu byte(s)\n", 
+           network_packet_identifier, (void*)identifier_address_pointer, sizeof(network_packet_identifier));
+
+    printf("Timestamp Value     : %llu   | Address: %p | Size: %zu byte(s)\n", 
+           timestamp_epoch_counter, (void*)timestamp_address_pointer, sizeof(timestamp_epoch_counter));
+
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">5.2 Pointer Dereferencing &amp; Indirect Access (<code>*</code>)</h4>
+                <p>Once you hold a memory address in a pointer variable, you can inspect or mutate the underlying data at that address using the unary <strong>dereference operator</strong> (<code>*</code>). Dereferencing instructs the CPU to navigate to the stored memory address and read or write the bytes located there.</p>
+                <p>Indirect access via pointers is essential when writing modular subroutines that need to modify caller variables in place or operate across complex data structures without unnecessary copying overhead.</p>
+                
+                <p>The following comprehensive systems demonstration illustrates pointer declaration, address capture via the address-of operator, safe dereferencing, and defensive null pointer validation:</p>
+
+                <!-- Pointer Foundations C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Function prototype enforcing defensive pointer contracts.
+bool update_sensor_telemetry_reading(uint32_t* sensor_register, uint32_t value);
+
+int main(void)
+{
+    // Initialize pointers to NULL by default to prevent wild pointer hazards.
+    uint32_t* sensor = NULL;
+
+    uint32_t hardware_sensor_register = 0x00A0FF10;
+
+    printf("Initial register value: 0x%08X\n", hardware_sensor_register);
+    printf("Memory address of register: %p\n", (void*)&hardware_sensor_register);
+
+    // Pass the memory address of the register to the modifier function.
+    bool status = update_sensor_telemetry_reading(&hardware_sensor_register, 0x00B0FF20);
+
+    if (!status)
+    {
+        fprintf(stderr, "Critical: Failed to update sensor telemetry register.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    printf("Updated register value:  0x%08X\n", hardware_sensor_register);
+
+    // Demonstrate defensive null pointer handling.
+    bool null_status = update_sensor_telemetry_reading(NULL, 0x00C0FF30);
+
+    if (!null_status)
+    {
+        printf("Defensive check successfully caught null pointer transmission.\n");
+    }
+
+    // Safe to free because free(NULL) is a safe no-op in C.
+    free(sensor);
+
+    sensor = NULL;
+
+    return EXIT_SUCCESS;
+}
+
+bool update_sensor_telemetry_reading(uint32_t* sensor_register, uint32_t value)
+{
+    // Validate pointer integrity before attempting dereferencing to prevent segmentation faults.
+    if (sensor_register == NULL)
+    {
+        fprintf(stderr, "Error: Received null pointer in sensor register update routine.\n");
+
+        return false;
+    }
+
+    // Dereference the pointer to mutate the underlying memory location directly.
+    *sensor_register = value;
+
+    return true;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">5.3 Pointer Arithmetic &amp; Buffer Traversal</h4>
+                <p>Unlike standard integer arithmetic, pointer arithmetic is scaled automatically by the size of the data type the pointer points to. When you increment a pointer (e.g., <code>pointer_variable++</code>), the memory address advances not by 1 single byte, but by <code>sizeof(*pointer_variable)</code> bytes.</p>
+                <p>This type-aware scaling ensures that iterating through sequential elements in an array buffer navigates precisely from one element boundary to the next without corrupting internal byte offsets.</p>
+
+                <p>The following systems demonstration showcases pointer arithmetic for scanning and processing sequential array buffer elements:</p>
+
+                <!-- Pointer Arithmetic C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+
+int main(void)
+{
+    uint32_t network_packet_burst[] = {0x11111111, 0x22222222, 0x33333333, 0x44444444};
+
+    // Calculate the number of network packet bursts.
+    size_t number_of_bursts = sizeof(network_packet_burst) / sizeof(network_packet_burst[0]);
+
+    // Initialize a pointer to point to the first element of the packet array.
+    uint32_t* current_packet_pointer = network_packet_burst;
+
+    printf("--- Scanning Packet Burst via Pointer Arithmetic ---\n");
+
+    for (size_t packet_index = 0; packet_index &lt; number_of_bursts; packet_index++)
+    {
+        // Dereference the current pointer position to read payload data.
+        printf("Packet Index %zu at Address %p -&gt; Value: 0x%08X\n",
+               packet_index, (void*)current_packet_pointer, *current_packet_pointer);
+
+        // Advance pointer to the next memory address (automatically scales by sizeof(uint32_t)).
+        current_packet_pointer++;
+    }
+
+    return EXIT_SUCCESS;
+}</code></pre>
+
+                <p class="mt-4">We can also apply pointer arithmetic directly to numeric arrays to reverse element order in place. The following systems program uses start and end pointers to reverse an array of integer values:</p>
+
+                <!-- Pointer Arithmetic Numeric Reversal C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Function prototype accepting array pointer as argument 1 and element count as argument 2.
+bool reverse_array(int32_t* const array, size_t count);
+
+int main(void)
+{
+    // Initialize the target numeric signal sequence array.
+    int32_t signal_sequence[] = {10, 20, 30, 40, 50, 60};
+
+    // Calculate the precise total element count of the array safely.
+    size_t number_of_sequences = sizeof(signal_sequence) / sizeof(signal_sequence[0]);
+
+    // Print the header label for the original sequence output.
+    printf("Original numeric sequence: ");
+
+    // Iterate through the array elements to print the original values.
+    for (size_t index = 0; index &lt; number_of_sequences; index++)
+    {
+        // Print each individual element followed by a space separator.
+        printf("%d ", signal_sequence[index]);
+    }
+
+    // Print a trailing newline character to cleanly flush the output row.
+    printf("\n");
+
+    // Invoke the in-place array reversal function and capture its operational status.
+    bool status = reverse_array(signal_sequence, number_of_sequences);
+
+    // Validate that the reversal operation completed successfully.
+    if (!status)
+    {
+        // Print a descriptive error message to the standard error stream.
+        fprintf(stderr, "Error: Numeric array reversal failed.\n");
+
+        // Terminate the program execution returning a standard failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Print the header label for the reversed sequence output.
+    printf("Reversed numeric sequence: ");
+
+    // Iterate through the array elements once more to display the reversed values.
+    for (size_t element_index = 0; element_index &lt; number_of_sequences; element_index++)
+    {
+        // Print each individual reversed element followed by a space separator.
+        printf("%d ", signal_sequence[element_index]);
+    }
+
+    // Print a trailing newline character to finalize the formatted console output.
+    printf("\n");
+
+    // Return success to the host operating system environment.
+    return EXIT_SUCCESS;
+}
+
+bool reverse_array(int32_t* const array, size_t count)
+{
+    // Validate pointer integrity and bounds defensively.
+    if (array == NULL || count == 0)
+    {
+        return false;
+    }
+
+    int32_t* start = array;
+    int32_t* end = array + (count - 1);
+
+    while (start &lt; end)
+    {
+        // Swap numeric values using dereferenced pointer addresses.
+        int32_t temporary = *start;
+        *start = *end;
+        *end = temporary;
+
+        // Advance start pointer forward and retreat end pointer backward.
+        start++;
+        end--;
+    }
+
+    return true;
+}</code></pre>
+
+                <p class="mt-4">Similarly, we can use pointer arithmetic to manipulate character buffers directly without array index notation. The following program uses pointer offsets to calculate string length and reverse a character buffer in place:</p>
+
+                <!-- Pointer Arithmetic String Reversal C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Function prototype enforcing strict pointer contracts.
+bool reverse_name(char* const name);
+
+int main(void)
+{
+    // Initialize the mutable character buffer storing the target user name.
+    char name[] = "Braiden";
+
+    // Print the original unmodified name buffer to standard output.
+    printf("Original name buffer: %s\n", name);
+
+    // Invoke the in-place string reversal function and capture its operational status.
+    bool status = reverse_name(name);
+
+    // Validate that the string reversal execution completed successfully.
+    if (!status)
+    {
+        // Print a descriptive error message to the standard error stream.
+        fprintf(stderr, "Error: String reversal failed due to null pointer.\n");
+
+        // Terminate program execution returning a standard failure status code.
+        return EXIT_FAILURE;
+    }
+
+    // Print the modified reversed name buffer to standard output.
+    printf("Reversed name buffer: %s\n", name);
+
+    // Return a successful exit status code to the operating system environment.
+    return EXIT_SUCCESS;
+}
+
+bool reverse_name(char* const name)
+{
+    // Validate pointer integrity defensively before proceeding.
+    if (name == NULL)
+    {
+        return false;
+    }
+
+    char* start = name;
+    char* end = name;
+
+    // Advance end to the last character before the null terminator using pointer arithmetic.
+    while (*end != '\0')
+    {
+        end++;
+    }
+
+    // Step back from the null terminator to point to the actual final character.
+    end--;
+
+    // Swap characters moving inward using pointer addresses.
+    while (start &lt; end)
+    {
+        // Store the starting character value in a temporary variable.
+        char temporary = *start;
+        *start = *end;
+        *end = temporary;
+
+        // Advance the start pointer forward and retreat the end pointer backward.
+        start++;
+        end--;
+    }
+
+    return true;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">5.4 Dynamic Heap Allocation &amp; Safe Pointer Management</h4>
+                <p>When working with datasets whose sizes are determined at runtime rather than compile time, automatic stack memory is insufficient. Instead, C programs request memory dynamically from the heap using standard library functions such as <code>malloc()</code>.</p>
+                <p>Because heap allocation can fail if the system runs out of available memory, every dynamic allocation request must be rigorously checked against <code>NULL</code> before the pointer is used. Furthermore, once heap memory is no longer needed, it must be explicitly returned using <code>free()</code>, followed immediately by nullifying the pointer to prevent dangling reference bugs.</p>
+
+                <p>The following systems demonstration illustrates dynamic heap allocation, defensive null pointer validation, safe buffer population via pointers, and proper cleanup:</p>
+
+                <!-- Dynamic Heap Allocation C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Function prototype for allocating and populating a dynamic sensor buffer.
+int32_t* allocate_sensor_buffer(size_t count);
+
+int main(void)
+{
+    // Initialize pointers to NULL immediately upon declaration.
+    int32_t* sensor_buffer = NULL;
+
+    size_t requested_count = 8;
+
+    // Invoke allocation function with defensive checks.
+    sensor_buffer = allocate_sensor_buffer(requested_count);
+
+    if (sensor_buffer == NULL)
+    {
+        fprintf(stderr, "Error: Failed to allocate memory for sensor buffer on the heap.\n");
+
+        return EXIT_FAILURE;
+    }
+
+    // Populate and print elements using pointer notation.
+    printf("--- Populating Dynamic Heap Buffer ---\n");
+
+    for (size_t index = 0; index < requested_count; index++)
+    {
+        *(sensor_buffer + index) = (int32_t)((index + 1) * 100);
+
+        printf("Buffer Element Index %zu: %d\n", index, *(sensor_buffer + index));
+    }
+
+    // Safely release heap memory.
+    free(sensor_buffer);
+
+    // Nullify pointer immediately after free to prevent dangling pointer access.
+    sensor_buffer = NULL;
+
+    printf("Dynamic memory successfully released and pointer nullified.\n");
+
+    return EXIT_SUCCESS;
+}
+
+int32_t* allocate_sensor_buffer(size_t count)
+{
+    // Validate requested bounds defensively.
+    if (count == 0)
+    {
+        fprintf(stderr, "Error: Requested element count cannot be zero.\n");
+
+        return NULL;
+    }
+
+    // Allocate memory on the heap using malloc.
+    int32_t* buffer = (int32_t*)malloc(count * sizeof(int32_t));
+
+    // Defensively check if malloc succeeded or returned NULL due to insufficient memory.
+    if (buffer == NULL)
+    {
+        fprintf(stderr, "Error: Heap allocation via malloc failed.\n");
+
+        return NULL;
+    }
+
+    return buffer;
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">5.5 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Always initialize pointers to <code>NULL</code> upon declaration if they do not immediately point to valid memory to avoid wild pointer risks.</li>
+                    <li class="mb-2">Always use the address-of operator (<code>&amp;</code>) to capture valid memory locations when passing variables by reference.</li>
+                    <li class="mb-2">Always validate pointer parameters against <code>NULL</code> before dereferencing to prevent catastrophic segmentation faults.</li>
+                    <li class="mb-2">Remember that pointer arithmetic automatically scales by the byte size of the underlying data type (<code>sizeof(*ptr)</code>).</li>
+                    <li class="mb-2">Avoid returning pointers to local automatic stack variables from functions, as their activation frames are destroyed upon exit.</li>
+                    <li class="mb-2">Qualify pointers with <code>const</code> whenever target data should remain read-only during pointer navigation.</li>
+                    <li class="mb-2">Always check heap allocation results for <code>NULL</code> and nullify pointers immediately after calling <code>free()</code>.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_04.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Functions &amp; Storage Classes
+                </a>
+                <a href="chapter_06.html" class="btn btn-primary btn-sm">
+                    Arrays &amp; Strings <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="description" content="Chapter 14: Bitwise Operations & Low-Level Optimization - C Unlocked by Braiden Gole." />
+        <meta name="author" content="Braiden Gole" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="C Unlocked | Braiden Gole" />
+        <meta property="og:description" content="A clear, modern, and practical guide to unlocking C programming, bitwise operators, and low-level optimization by Braiden Gole." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://braiden-gole.github.io/c-unlocked-book/" />
+
+        <title>Chapter 14: Bitwise Operations &amp; Low-Level Optimization | C Unlocked | Braiden Gole</title>
+
+        <link rel="icon" type="image/x-icon" href="../images/circle.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="../images/circle.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="../images/circle.png">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="../images/square.png">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-B/GM4XqrwHnWXNOWMbloTmrYXZg10cakYGmpfsR/bbzQ6JAJI4ihuyADKLnBgrCe" crossorigin="anonymous">
+
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+        <!-- Highlight.js GitHub Light & Dark Themes -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="../main.css">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+        <header class="book-header py-4 text-center">
+            <div class="container d-inline-flex align-items-center justify-content-center gap-3 text-decoration-none">
+                <img src="../svgs/c.svg" width="45" height="45" alt="C Logo" class="book-logo">
+                <h1 class="h3 fw-bold mb-0 tracking-tight text-body">Unlocked</h1>
+            </div>
+        </header>
+
+        <div class="container"><hr class="book-divider my-0"></div>
+
+        <!-- Main Content Container -->
+        <main class="container my-5 content-container" style="max-width: 900px;">
+            <article class="chapter-content">
+                <h2 class="display-6 fw-bold mb-3 chapter-title">Chapter 14: Bitwise Operations &amp; Low-Level Optimization</h2>
+                <div class="lead mb-4">
+                    Low-level systems programming frequently requires manipulating individual bits within integer representations to manage hardware control registers, pack compact flags into minimal memory footprints, and accelerate numerical computations. Mastering bitwise operators, bitmasks, shift operations, and optimization techniques is essential for writing high-performance systems code.
+                </div>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">14.1 The Six Bitwise Operators</h4>
+                <p>Standard C provides six native operators that execute operations directly on the individual binary bits of integer types:</p>
+                <table class="table table-bordered table-sm font-monospace small mb-4">
+                    <thead>
+                        <tr>
+                            <th>Operator</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>&amp;</code></td>
+                            <td>Bitwise AND</td>
+                            <td>Results in 1 only if both corresponding bits are 1. Used for masking bits off.</td>
+                        </tr>
+                        <tr>
+                            <td><code>|</code></td>
+                            <td>Bitwise OR</td>
+                            <td>Results in 1 if at least one corresponding bit is 1. Used for setting bits on.</td>
+                        </tr>
+                        <tr>
+                            <td><code>^</code></td>
+                            <td>Bitwise XOR</td>
+                            <td>Results in 1 if corresponding bits are different. Used for toggling bits.</td>
+                        </tr>
+                        <tr>
+                            <td><code>~</code></td>
+                            <td>Bitwise NOT</td>
+                            <td>Flips all bits (ones' complement). Turns 0s into 1s and 1s into 0s.</td>
+                        </tr>
+                        <tr>
+                            <td><code>&lt;&lt;</code></td>
+                            <td>Left Shift</td>
+                            <td>Shifts bits left by a specified count, padding with zeros on the right (multiplies by powers of 2).</td>
+                        </tr>
+                        <tr>
+                            <td><code>&gt;&gt;</code></td>
+                            <td>Right Shift</td>
+                            <td>Shifts bits right by a specified count (divides by powers of 2). Arithmetic shift preserves sign for signed types.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">14.2 Common Bitmasking Idioms</h4>
+                <p>To control specific states without altering adjacent bits, systems programmers use <strong>bitmasks</strong> combined with logical operators:</p>
+                <ul class="mb-3">
+                    <li><strong>Setting a Bit:</strong> <code>register_value |= (1 &lt;&lt; bit_position);</code></li>
+                    <li><strong>Clearing a Bit:</strong> <code>register_value &amp;= ~(1 &lt;&lt; bit_position);</code></li>
+                    <li><strong>Toggling a Bit:</strong> <code>register_value ^= (1 &lt;&lt; bit_position);</code></li>
+                    <li><strong>Testing a Bit:</strong> <code>bool is_set = (register_value &amp; (1 &lt;&lt; bit_position)) != 0;</code></li>
+                </ul>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">14.3 Comprehensive Systems Demonstration: Hardware Register Emulator</h4>
+                <p>The following detailed systems demonstration simulates a memory-mapped hardware peripheral control register, showcasing bit manipulation, flag isolation, masking, and shift-based status reporting:</p>
+
+                <!-- Bitwise Operations C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Define symbolic bit positions for a simulated hardware peripheral control register.
+#define PERIPHERAL_POWER_BIT 0
+#define PERIPHERAL_INTERRUPT_BIT 1
+#define PERIPHERAL_ERROR_BIT 2
+#define PERIPHERAL_DMA_ENABLE_BIT 3
+
+// Define operational mode bitmasks (bits 4 through 6).
+#define PERIPHERAL_MODE_MASK 0x70
+
+// Function prototypes for register management.
+void print_register_binary(uint8_t register_value);
+void configure_peripheral_device(uint8_t* control_register_address);
+
+int main(void)
+{
+    // Initialize hardware control register to zero (all flags disabled).
+    uint8_t hardware_control_register = 0x00;
+
+    // Print initial register state header.
+    printf("Initial Control Register State:\n");
+
+    // Print initial binary bit representation.
+    print_register_binary(hardware_control_register);
+
+    // Configure device flags using bitwise operations.
+    configure_peripheral_device(&hardware_control_register);
+
+    // Print final configured register state header.
+    printf("\nFinal Configured Control Register State:\n");
+
+    // Print final binary bit representation.
+    print_register_binary(hardware_control_register);
+
+    // Isolate and test individual status flags using bitmasks.
+    bool power_status = (hardware_control_register & (1 << PERIPHERAL_POWER_BIT)) != 0;
+    bool error_status = (hardware_control_register & (1 << PERIPHERAL_ERROR_BIT)) != 0;
+
+    // Print diagnostic inspection results.
+    printf("\nDiagnostic Inspection:\n");
+    printf("- Power State: %s\n", power_status ? "ACTIVE" : "STANDBY");
+    printf("- Error Flag:  %s\n", error_status ? "FAULT DETECTED" : "CLEAR");
+
+    // Extract multi-bit operational mode using bitwise AND and right-shifting.
+    uint8_t extracted_mode_field = (hardware_control_register & PERIPHERAL_MODE_MASK) >> 4;
+    
+    // Output extracted mode value.
+    printf("- Operational Mode Code: %u\n", extracted_mode_field);
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}
+
+void configure_peripheral_device(uint8_t* control_register_address)
+{
+    // Validate register pointer defensively.
+    if (control_register_address == NULL)
+    {
+        // Print error message to standard error stream.
+        fprintf(stderr, "Error: Received null register address pointer.\n");
+
+        // Return immediately if pointer is invalid.
+        return;
+    }
+
+    // 1. Set the power bit on using bitwise OR.
+    *control_register_address |= (1 << PERIPHERAL_POWER_BIT);
+
+    // Print confirmation message.
+    printf("-> Enabled Power Bit.\n");
+
+    // 2. Enable DMA transfer capability using bitwise OR.
+    *control_register_address |= (1 << PERIPHERAL_DMA_ENABLE_BIT);
+
+    // Print confirmation message.
+    printf("-> Enabled DMA Transfer Bit.\n");
+
+    // 3. Set operational mode field (value 5 -> binary 101) into bits 4-6.
+    // First, clear the existing mode bits using bitwise AND with inverted mask.
+    *control_register_address &= ~PERIPHERAL_MODE_MASK;
+
+    // Next, shift the desired mode value into position and combine with bitwise OR.
+    uint8_t target_operational_mode = 5;
+
+    // Apply target mode value to register bits 4-6.
+    *control_register_address |= (target_operational_mode << 4);
+
+    // Print confirmation message.
+    printf("-> Configured Operational Mode Field to 5.\n");
+
+    // 4. Accidentally trigger error flag, then toggle it off using XOR.
+    *control_register_address ^= (1 << PERIPHERAL_ERROR_BIT);
+
+    // Print confirmation message.
+    printf("-> Toggled Error Flag ON temporarily.\n");
+    
+    // Toggle error flag off using second XOR operation.
+    *control_register_address ^= (1 << PERIPHERAL_ERROR_BIT);
+
+    // Print confirmation message.
+    printf("-> Toggled Error Flag OFF via second XOR operation.\n");
+}
+
+void print_register_binary(uint8_t register_value)
+{
+    // Print hexadecimal representation header.
+    printf("Hex: 0x%02X | Binary: ", register_value);
+    
+    // Iterate backward through bits from 7 down to 0.
+    for (int bit_index = 7; bit_index >= 0; bit_index--)
+    {
+        // Extract individual bit value using right shift and bitwise AND.
+        int current_bit = (register_value >> bit_index) & 1;
+
+        // Print current bit value.
+        printf("%d", current_bit);
+        
+        // Insert separator space between nibbles for readability.
+        if (bit_index == 4)
+        {
+            printf(" ");
+        }
+    }
+
+    // Print newline at end of binary representation.
+    printf("\n");
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">14.4 Practical Systems Application: IPv4 Subnet Mask Calculator</h4>
+                <p>Bitwise operations are extensively used in network systems programming to validate IP addresses, isolate network routing prefixes, and compute subnet boundaries. The following utility extracts network and host components from an IPv4 address given a custom subnet mask:</p>
+
+                <!-- Networking Subnet C Code Block -->
+                <pre class="rounded border font-monospace small mb-3 overflow-hidden"><code class="language-c p-3">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;stdbool.h&gt;
+
+// Function prototype to compute and verify network boundaries.
+bool analyze_ipv4_subnet(uint32_t ip_address, uint32_t subnet_mask);
+void print_ipv4_dotted_decimal(uint32_t address_value);
+
+int main(void)
+{
+    // Represent 192.168.1.55 as a 32-bit unsigned integer.
+    // Octets: 192 (11000000), 168 (10101000), 1 (00000001), 55 (00110111)
+    uint32_t sample_host_ip = (192U &lt;&lt; 24) | (168U &lt;&lt; 16) | (1U &lt;&lt; 8) | 55U;
+
+    // Represent subnet mask 255.255.255.0 (/24 prefix).
+    uint32_t sample_subnet_mask = (255U &lt;&lt; 24) | (255U &lt;&lt; 16) | (255U &lt;&lt; 8) | 0U;
+
+    // Print network analysis header.
+    printf("Analyzing Network Routing Parameters:\n");
+    printf("Target Host IP : ");
+
+    // Print host IP address in dotted decimal notation.
+    print_ipv4_dotted_decimal(sample_host_ip);
+
+    printf("Subnet Mask    : ");
+
+    // Print subnet mask in dotted decimal notation.
+    print_ipv4_dotted_decimal(sample_subnet_mask);
+
+    printf("\n");
+
+    // Analyze subnet boundaries.
+    analyze_ipv4_subnet(sample_host_ip, sample_subnet_mask);
+
+    // Return success status code.
+    return EXIT_SUCCESS;
+}
+
+bool analyze_ipv4_subnet(uint32_t ip_address, uint32_t subnet_mask)
+{
+    // Isolate the Network ID using bitwise AND between IP address and subnet mask.
+    uint32_t network_identifier = ip_address &amp; subnet_mask;
+
+    // Isolate the Host ID using bitwise AND with the inverted subnet mask (host mask).
+    uint32_t host_identifier = ip_address &amp; (~subnet_mask);
+
+    // Print calculation headers and extracted network parameters.
+    printf("Calculation Results:\n");
+    printf("-> Network Address: ");
+
+    // Print network identifier address.
+    print_ipv4_dotted_decimal(network_identifier);
+
+    printf("-> Host Identifier: ");
+
+    // Print host identifier address.
+    print_ipv4_dotted_decimal(host_identifier);
+
+    // Return true indicating successful analysis.
+    return true;
+}
+
+void print_ipv4_dotted_decimal(uint32_t address_value)
+{
+    // Extract individual 8-bit octets using right-shifting and bitwise masking.
+    uint8_t first_octet  = (address_value &gt;&gt; 24) &amp; 0xFF;
+    uint8_t second_octet = (address_value &gt;&gt; 16) &amp; 0xFF;
+    uint8_t third_octet  = (address_value &gt;&gt; 8)  &amp; 0xFF;
+    uint8_t fourth_octet = address_value &amp; 0xFF;
+
+    // Print octets in standard dotted decimal format along with raw hex representation.
+    printf("%u.%u.%u.%u (Hex: 0x%08X)\n", 
+           first_octet, second_octet, third_octet, fourth_octet, address_value);
+}</code></pre>
+
+                <h4 class="fw-bold mt-4 mb-3 chapter-title">14.5 Summary Checklist</h4>
+                <ul class="mb-4">
+                    <li class="mb-2">Use bitwise AND (<code>&amp;</code>) with masks to isolate, test, or clear specific bits within an integer.</li>
+                    <li class="mb-2">Use bitwise OR (<code>|</code>) to combine flags and set specific bits active without disturbing neighboring data.</li>
+                    <li class="mb-2">Use bitwise XOR (<code>^</code>) to toggle binary flags cleanly between active and inactive states.</li>
+                    <li class="mb-2">Combine bitwise masking with right-shifting (<code>&gt;&gt;</code>) and bitwise NOT inversion to compute IPv4 subnets and separate network IDs from host identifiers.</li>
+                </ul>
+            </article>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+                <a href="chapter_13.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Error Handling
+                </a>
+                <a href="chapter_15.html" class="btn btn-primary btn-sm">
+                    Function Pointers, Callbacks <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer text-center py-4 mt-auto">
+            <div class="container">
+                <p class="mb-1 small">&copy; 2026 Braiden Gole. C Unlocked. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Bootstrap JS Bundle -->
+        <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@6.0.0-alpha.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-1a/pXj49ZQ1aHEmrJ+gMw1otqoVsYwlEnlD8mIfY2TV03r20Y0CN7uqx1tQogjPL" crossorigin="anonymous"></script>
+
+        <!-- Highlight.js Library & Initialization Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+
+        <script src="../script.js"></script>
+    </body>
+</html>
